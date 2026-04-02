@@ -4,7 +4,9 @@ export type ObjectType =
   | 'book-magazine' | 'product-box' | 'shopping-bag' | 'tshirt'
   | 'tote-bag' | 'poster-print' | 'coffee-mug' | 'bottle-label'
   | 'signage' | 'notebook' | 'brand-identity' | 'vinyl-cd' | 'billboard'
-  | 'restaurant-menu' | 'bus-ad' | 'bus-stop' | 'flag' | 'pull-up-banner';
+  | 'restaurant-menu' | 'bus-ad' | 'bus-stop' | 'flag' | 'pull-up-banner'
+  | 'postcard' | 'tablet-apple' | 'tablet-android' | 'newspaper'
+  | 'magazine-ad' | 'exhibition-stand' | 'tri-fold-flyer' | 'envelope';
 
 export type CameraAngle =
   | 'top-down' | 'three-quarter' | 'eye-level' | 'low-angle'
@@ -98,7 +100,7 @@ export interface MockupConfig {
 export const PRINT_OBJECTS: ObjectType[] = [
   'business-cards', 'letterhead', 'book-magazine', 'product-box',
   'poster-print', 'notebook', 'brand-identity', 'vinyl-cd', 'shopping-bag',
-  'restaurant-menu',
+  'restaurant-menu', 'postcard', 'newspaper', 'magazine-ad', 'tri-fold-flyer', 'envelope',
 ];
 
 export const FABRIC_OBJECTS: ObjectType[] = [
@@ -107,10 +109,11 @@ export const FABRIC_OBJECTS: ObjectType[] = [
 
 export const SCREEN_OBJECTS: ObjectType[] = [
   'phone-screen', 'laptop-screen', 'desktop-monitor', 'imac',
+  'tablet-apple', 'tablet-android',
 ];
 
 export const SIGNAGE_OBJECTS: ObjectType[] = [
-  'signage', 'billboard', 'bus-ad', 'bus-stop', 'pull-up-banner',
+  'signage', 'billboard', 'bus-ad', 'bus-stop', 'pull-up-banner', 'exhibition-stand',
 ];
 
 // ── Constants ───────────────────────────────────────────────────────────────
@@ -140,6 +143,14 @@ export const OBJECTS = [
   { id: 'bus-stop', label: 'Bus Stop Ad' },
   { id: 'flag', label: 'Flag / Banner' },
   { id: 'pull-up-banner', label: 'Pull-Up Banner' },
+  { id: 'postcard', label: 'Postcard' },
+  { id: 'tablet-apple', label: 'iPad / Apple Tablet' },
+  { id: 'tablet-android', label: 'Android Tablet' },
+  { id: 'newspaper', label: 'Newspaper Ad' },
+  { id: 'magazine-ad', label: 'Magazine Ad' },
+  { id: 'exhibition-stand', label: 'Exhibition Stand' },
+  { id: 'tri-fold-flyer', label: 'Tri-Fold Flyer' },
+  { id: 'envelope', label: 'Envelope' },
 ] as const;
 
 export const CAMERAS = [
@@ -747,6 +758,172 @@ export const OBJECT_OPTIONS: Partial<Record<ObjectType, ObjectOptionDef[]>> = {
       { id: 'single', label: 'Single', prompt: 'as a single standalone pull-up banner' },
       { id: 'pair', label: 'Pair', prompt: 'as a matching pair of pull-up banners flanking an entrance' },
       { id: 'row', label: 'Row of Three', prompt: 'as a row of three coordinated pull-up banners creating a backdrop' },
+    ]},
+  ],
+
+  // ── NEW OBJECTS ─────────────────────────────────────────────
+
+  'postcard': [
+    { key: 'size', label: 'Size', default: 'a6', choices: [
+      { id: 'a6', label: 'A6 (105×148mm)', prompt: 'at standard A6 postcard size (105x148mm)' },
+      { id: 'a5', label: 'A5 (148×210mm)', prompt: 'at larger A5 size (148x210mm)' },
+      { id: 'dl', label: 'DL (99×210mm)', prompt: 'in slim DL format (99x210mm)' },
+    ]},
+    { key: 'orientation', label: 'Orientation', default: 'landscape', choices: [
+      { id: 'landscape', label: 'Landscape', prompt: 'in horizontal landscape orientation' },
+      { id: 'portrait', label: 'Portrait', prompt: 'in vertical portrait orientation' },
+    ]},
+    { key: 'finish', label: 'Special Finish', default: 'none', choices: [
+      { id: 'none', label: 'None', prompt: '' },
+      { id: 'gold-foil', label: 'Gold Foil', prompt: 'with gold foil stamping catching the light with warm metallic sheen' },
+      { id: 'spot-uv', label: 'Spot UV', prompt: 'with spot UV varnish creating glossy raised areas against the matte surface' },
+      { id: 'emboss', label: 'Embossed', prompt: 'with blind embossed elements creating tactile raised texture' },
+    ]},
+    { key: 'corner', label: 'Corner Type', default: 'sharp', choices: [
+      { id: 'sharp', label: 'Sharp', prompt: 'with sharp precisely cut 90-degree corners' },
+      { id: 'rounded', label: 'Rounded', prompt: 'with softly rounded corners' },
+    ]},
+  ],
+
+  'tablet-apple': [
+    { key: 'model', label: 'Model', default: 'ipad-pro', choices: [
+      { id: 'ipad-pro', label: 'iPad Pro', prompt: 'on an iPad Pro with ultra-thin Liquid Retina display and squared-off aluminum edges' },
+      { id: 'ipad-air', label: 'iPad Air', prompt: 'on an iPad Air with slim aluminum body and vibrant Liquid Retina display' },
+      { id: 'ipad-mini', label: 'iPad mini', prompt: 'on a compact iPad mini with minimal bezels and precise build quality' },
+    ]},
+    { key: 'orientation', label: 'Orientation', default: 'landscape', choices: [
+      { id: 'portrait', label: 'Portrait', prompt: 'held in portrait vertical orientation' },
+      { id: 'landscape', label: 'Landscape', prompt: 'rotated to landscape horizontal orientation' },
+    ]},
+    { key: 'case', label: 'Case', default: 'none', choices: [
+      { id: 'none', label: 'Bare', prompt: 'with no case, showing the clean aluminum and glass construction' },
+      { id: 'folio', label: 'Folio Case', prompt: 'inside a slim leather folio case with folded front cover' },
+      { id: 'keyboard', label: 'Keyboard Case', prompt: 'attached to a keyboard case with integrated kickstand' },
+    ]},
+    { key: 'bezel', label: 'Bezel', default: 'thin', choices: [
+      { id: 'thin', label: 'Thin Bezel', prompt: 'with modern thin bezels framing the display' },
+      { id: 'standard', label: 'Standard Bezel', prompt: 'with standard uniform bezels around the display' },
+    ]},
+  ],
+
+  'tablet-android': [
+    { key: 'style', label: 'Style', default: 'samsung-tab', choices: [
+      { id: 'samsung-tab', label: 'Samsung Galaxy Tab', prompt: 'on a Samsung Galaxy Tab with premium aluminum chassis and Super AMOLED display' },
+      { id: 'generic', label: 'Generic Android', prompt: 'on a modern generic Android tablet with thin bezels and sleek design' },
+      { id: 'pixel-tab', label: 'Pixel Tablet', prompt: 'on a Google Pixel Tablet with nano-texture coating and clean software aesthetic' },
+    ]},
+    { key: 'orientation', label: 'Orientation', default: 'landscape', choices: [
+      { id: 'portrait', label: 'Portrait', prompt: 'held in portrait vertical orientation' },
+      { id: 'landscape', label: 'Landscape', prompt: 'rotated to landscape horizontal orientation' },
+    ]},
+    { key: 'case', label: 'Case', default: 'none', choices: [
+      { id: 'none', label: 'Bare', prompt: 'with no case, showing the clean hardware construction' },
+      { id: 'folio', label: 'Folio Case', prompt: 'inside a slim folio case with foldable front cover stand' },
+      { id: 'stand', label: 'Stand Case', prompt: 'in a protective case with built-in adjustable kickstand' },
+    ]},
+  ],
+
+  'newspaper': [
+    { key: 'format', label: 'Format', default: 'broadsheet', choices: [
+      { id: 'broadsheet', label: 'Broadsheet', prompt: 'in large broadsheet format with full-width pages' },
+      { id: 'tabloid', label: 'Tabloid', prompt: 'in compact tabloid format, half the size of broadsheet' },
+    ]},
+    { key: 'fold', label: 'Fold State', default: 'half-fold', choices: [
+      { id: 'full-open', label: 'Full Open', prompt: 'fully opened flat showing the complete spread' },
+      { id: 'half-fold', label: 'Half Folded', prompt: 'folded in half with the front page visible and fold crease prominent' },
+      { id: 'quarter-fold', label: 'Quarter Folded', prompt: 'folded in quarters showing just the top-right section' },
+    ]},
+    { key: 'age', label: 'Paper Age', default: 'fresh', choices: [
+      { id: 'fresh', label: 'Fresh Print', prompt: 'freshly printed with bright white newsprint and crisp ink' },
+      { id: 'aged', label: 'Aged', prompt: 'slightly aged with warm yellowed newsprint and authentic worn character' },
+    ]},
+    { key: 'ad-placement', label: 'Ad Placement', default: 'half-page', choices: [
+      { id: 'full-page', label: 'Full Page', prompt: 'with a full-page advertisement taking up the entire spread' },
+      { id: 'half-page', label: 'Half Page', prompt: 'with a prominent half-page advertisement on the visible section' },
+      { id: 'quarter-page', label: 'Quarter Page', prompt: 'with a quarter-page advertisement in the lower section' },
+    ]},
+  ],
+
+  'magazine-ad': [
+    { key: 'style', label: 'Magazine Style', default: 'fashion', choices: [
+      { id: 'fashion', label: 'Fashion', prompt: 'in a high-gloss fashion magazine with premium coated pages' },
+      { id: 'business', label: 'Business', prompt: 'in a professional business magazine with clean editorial layout' },
+      { id: 'lifestyle', label: 'Lifestyle', prompt: 'in a lifestyle magazine with warm editorial photography' },
+      { id: 'tech', label: 'Tech', prompt: 'in a technology magazine with clean modern design aesthetic' },
+    ]},
+    { key: 'position', label: 'Ad Position', default: 'single-page', choices: [
+      { id: 'cover', label: 'Cover', prompt: 'as the magazine front cover featuring the brand prominently' },
+      { id: 'spread', label: 'Double Spread', prompt: 'as a dramatic double-page spread advertisement spanning both pages' },
+      { id: 'single-page', label: 'Single Page', prompt: 'as a full single-page advertisement on one side' },
+      { id: 'back-cover', label: 'Back Cover', prompt: 'as the prestigious back cover advertisement' },
+    ]},
+    { key: 'finish', label: 'Paper Finish', default: 'glossy', choices: [
+      { id: 'glossy', label: 'Glossy', prompt: 'on high-gloss coated paper with mirror-like reflective sheen' },
+      { id: 'matte', label: 'Matte', prompt: 'on soft matte coated paper with anti-glare finish' },
+      { id: 'uncoated', label: 'Uncoated', prompt: 'on uncoated natural paper stock with tactile organic texture' },
+    ]},
+  ],
+
+  'exhibition-stand': [
+    { key: 'type', label: 'Stand Type', default: 'pop-up', choices: [
+      { id: 'pop-up', label: 'Pop-Up Display', prompt: 'as a curved pop-up display stand with large format graphic panels' },
+      { id: 'shell-scheme', label: 'Shell Scheme', prompt: 'as a modular shell-scheme exhibition booth with panelled walls and fascia' },
+      { id: 'modular', label: 'Modular System', prompt: 'as a custom modular exhibition system with structural aluminium frames and printed infill panels' },
+      { id: 'island', label: 'Island Stand', prompt: 'as an open island stand accessible from all four sides with overhead hanging structure' },
+    ]},
+    { key: 'size', label: 'Stand Size', default: 'medium-6m', choices: [
+      { id: 'small-3m', label: 'Small (3m wide)', prompt: 'at a compact 3-metre wide exhibition space' },
+      { id: 'medium-6m', label: 'Medium (6m wide)', prompt: 'at a standard 6-metre wide exhibition stand' },
+      { id: 'large-9m', label: 'Large (9m wide)', prompt: 'at an expansive 9-metre wide large-format exhibition stand' },
+    ]},
+    { key: 'elements', label: 'Stand Elements', default: 'with-counter', choices: [
+      { id: 'graphics-only', label: 'Graphics Only', prompt: 'showing graphic panels and branding without furniture' },
+      { id: 'with-counter', label: 'With Counter', prompt: 'including a branded reception counter in the foreground' },
+      { id: 'with-screen', label: 'With Screen', prompt: 'featuring a large display screen showing digital brand content' },
+      { id: 'full-setup', label: 'Full Setup', prompt: 'fully dressed with counter, screens, seating, and brand collateral' },
+    ]},
+  ],
+
+  'tri-fold-flyer': [
+    { key: 'paper-size', label: 'Paper Size', default: 'a4', choices: [
+      { id: 'a4', label: 'A4', prompt: 'folded from A4 paper (210x297mm) into three equal panels' },
+      { id: 'letter', label: 'US Letter', prompt: 'folded from US Letter (8.5x11in) into three equal panels' },
+      { id: 'dl', label: 'DL', prompt: 'in DL format (99x210mm), designed to fit a standard envelope' },
+    ]},
+    { key: 'fold-state', label: 'Fold State', default: 'partially-open', choices: [
+      { id: 'closed', label: 'Closed', prompt: 'fully closed showing the front cover panel only' },
+      { id: 'partially-open', label: 'Partially Open', prompt: 'partially unfolded with two panels visible and one panel fanning open' },
+      { id: 'fully-open', label: 'Fully Open', prompt: 'fully opened flat showing all three panels side by side' },
+    ]},
+    { key: 'finish', label: 'Paper Finish', default: 'glossy', choices: [
+      { id: 'matte', label: 'Matte', prompt: 'on soft matte coated stock with an elegant anti-glare surface' },
+      { id: 'glossy', label: 'Glossy', prompt: 'on high-gloss coated paper with vibrant color reproduction and sheen' },
+      { id: 'uncoated', label: 'Uncoated', prompt: 'on uncoated paper with a natural tactile texture' },
+    ]},
+  ],
+
+  'envelope': [
+    { key: 'size', label: 'Size', default: 'c5', choices: [
+      { id: 'c6', label: 'C6 (114×162mm)', prompt: 'in C6 envelope size (114x162mm), fits A6 or folded A4' },
+      { id: 'c5', label: 'C5 (162×229mm)', prompt: 'in C5 envelope size (162x229mm), fits A5 or folded A4' },
+      { id: 'c4', label: 'C4 (229×324mm)', prompt: 'in large C4 envelope size (229x324mm), fits unfolded A4' },
+      { id: 'dl', label: 'DL (110×220mm)', prompt: 'in DL envelope size (110x220mm), fits a tri-fold A4' },
+      { id: 'us-standard', label: 'US #10 Standard', prompt: 'in US standard #10 business envelope (105x241mm)' },
+    ]},
+    { key: 'flap', label: 'Flap State', default: 'tucked', choices: [
+      { id: 'tucked', label: 'Tucked', prompt: 'with the flap neatly tucked closed' },
+      { id: 'open', label: 'Open', prompt: 'with the triangular flap lifted open showing the interior' },
+      { id: 'sealed', label: 'Sealed', prompt: 'with the flap gummed and sealed shut' },
+    ]},
+    { key: 'window', label: 'Window', default: 'none', choices: [
+      { id: 'none', label: 'No Window', prompt: 'with a solid front face and no window' },
+      { id: 'standard', label: 'Standard Window', prompt: 'with a standard die-cut address window on the front face' },
+      { id: 'panoramic', label: 'Panoramic Window', prompt: 'with a wide panoramic window spanning most of the front face' },
+    ]},
+    { key: 'finish', label: 'Material Finish', default: 'plain', choices: [
+      { id: 'plain', label: 'Plain White', prompt: 'in smooth plain white paper with clean crisp edges' },
+      { id: 'textured', label: 'Textured', prompt: 'in premium textured laid paper with subtle ribbed surface' },
+      { id: 'kraft', label: 'Kraft', prompt: 'in natural brown kraft paper with organic fiber texture' },
     ]},
   ],
 };

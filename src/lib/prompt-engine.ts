@@ -38,6 +38,14 @@ const OBJECT_PROMPTS: Record<string, string> = {
   'bus-stop': "A bus stop shelter with an advertising panel displaying a poster design, set in an urban street environment with realistic city context.",
   'flag': "A branded flag or banner displaying a logo and design, fabric flowing naturally with realistic textile texture and movement.",
   'pull-up-banner': "A retractable pull-up roller banner standing on its aluminum base, displaying a vertical promotional design at full height.",
+  'postcard': "A premium printed postcard with vivid full-color printing, showing both the design face and the addressed back, with sharp print quality and clean cut edges.",
+  'tablet-apple': "An Apple iPad tablet displaying a vivid app design or website, the sleek aluminum body and Retina display showing sharp pixel-perfect content with realistic screen glow.",
+  'tablet-android': "An Android tablet displaying a vibrant UI design, with modern thin bezels and the screen showing crisp high-resolution content with realistic ambient reflections.",
+  'newspaper': "A printed newspaper with a prominently placed advertisement, the newsprint texture visible with realistic ink coverage, folded authentically with natural creases.",
+  'magazine-ad': "A glossy magazine opened to a full-page advertisement, the high-quality print showing rich colors and sharp detail, magazine pages slightly curving at the spine.",
+  'exhibition-stand': "A professional exhibition stand or trade show booth displaying branded graphics, with structural elements visible and large-format prints creating an immersive brand environment.",
+  'tri-fold-flyer': "A tri-fold brochure flyer with three panels visible, showing the design across connected panels with clean fold lines and professional print quality on coated paper.",
+  'envelope': "A premium printed envelope with brand logo and addressing, showing the paper texture, clean edges, and professional print registration with visible flap detail.",
 };
 
 const CAMERA_PROMPTS: Record<string, string> = {

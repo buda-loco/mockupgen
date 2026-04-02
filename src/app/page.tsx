@@ -10,6 +10,7 @@ import {
   Zap, Fingerprint, Pipette, ImagePlus, X, Plus, SlidersHorizontal,
   Bus, MapPin, Flag, PanelTop, UtensilsCrossed, Apple, Wand2,
   CircleDot, Hash, Save, Trash2, FolderOpen,
+  Search, Menu, Braces, Mail,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
@@ -32,6 +33,10 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// ── System font stack ─────────────────────────────────────────────────────────
+
+const SYSTEM_FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif';
+
 // ── Object icon map ────────────────────────────────────────────────────────
 
 const OBJECT_ICONS: Record<string, React.ElementType> = {
@@ -44,6 +49,9 @@ const OBJECT_ICONS: Record<string, React.ElementType> = {
   'desktop-monitor': Monitor, 'imac': Apple,
   'restaurant-menu': UtensilsCrossed, 'bus-ad': Bus, 'bus-stop': MapPin,
   'flag': Flag, 'pull-up-banner': PanelTop,
+  'postcard': FileImage, 'tablet-apple': Apple, 'tablet-android': Smartphone,
+  'newspaper': FileText, 'magazine-ad': BookOpen,
+  'exhibition-stand': Signpost, 'tri-fold-flyer': FileText, 'envelope': Mail,
 };
 
 // ── Object categories ──────────────────────────────────────────────────────
@@ -56,7 +64,7 @@ const OBJECT_CATEGORIES = [
   { id: 'screen', label: 'Screen', objects: SCREEN_OBJECTS },
   { id: 'fabric', label: 'Fabric', objects: FABRIC_OBJECTS },
   { id: 'signage', label: 'Signage', objects: SIGNAGE_OBJECTS },
-  { id: 'hard', label: 'Hard Surface', objects: HARD_OBJECTS },
+  { id: 'hard', label: 'Hard', objects: HARD_OBJECTS },
 ] as const;
 
 // ── 3D Math helpers ─────────────────────────────────────────────────────────
@@ -300,7 +308,7 @@ function AngleWidget({ angle, onChange }: { angle: CustomAngle; onChange: (a: Cu
           </text>
         </svg>
         {dragState.current.active && dragState.current.axis && (
-          <div className="absolute top-2 right-2 px-2 py-1 rounded bg-black/70 text-[9px] font-mono font-bold text-white backdrop-blur-sm">
+          <div className="absolute top-2 right-2 px-2 py-1 rounded bg-black/70 text-[11px] font-mono font-bold text-white backdrop-blur-sm">
             {dragState.current.axis === 'x' && <span style={{ color: '#FF6666' }}>PITCH</span>}
             {dragState.current.axis === 'y' && <span style={{ color: '#66DD66' }}>YAW</span>}
             {dragState.current.axis === 'z' && <span style={{ color: '#6688FF' }}>FREE</span>}
@@ -310,12 +318,12 @@ function AngleWidget({ angle, onChange }: { angle: CustomAngle; onChange: (a: Cu
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-[--bg-inset] rounded-lg px-3 py-2 border border-[--border]">
-          <span className="text-[9px] font-bold text-[#E05555] uppercase block">Pitch (X)</span>
-          <span className="text-[12px] font-mono font-bold text-[--foreground]">{Math.round(angle.pitch)}° <span className="text-[--foreground-dim] text-[10px]">{pitchLabel}</span></span>
+          <span className="text-[11px] font-bold text-[#E05555] uppercase block">Pitch (X)</span>
+          <span className="text-[13px] font-mono font-bold text-[--foreground]">{Math.round(angle.pitch)}° <span className="text-[--foreground-dim] text-[11px]">{pitchLabel}</span></span>
         </div>
         <div className="bg-[--bg-inset] rounded-lg px-3 py-2 border border-[--border]">
-          <span className="text-[9px] font-bold text-[#55B855] uppercase block">Yaw (Y)</span>
-          <span className="text-[12px] font-mono font-bold text-[--foreground]">{Math.round(angle.yaw)}° <span className="text-[--foreground-dim] text-[10px]">{yawLabel}</span></span>
+          <span className="text-[11px] font-bold text-[#55B855] uppercase block">Yaw (Y)</span>
+          <span className="text-[13px] font-mono font-bold text-[--foreground]">{Math.round(angle.yaw)}° <span className="text-[--foreground-dim] text-[11px]">{yawLabel}</span></span>
         </div>
       </div>
       <div className="grid grid-cols-4 gap-1.5">
@@ -327,13 +335,13 @@ function AngleWidget({ angle, onChange }: { angle: CustomAngle; onChange: (a: Cu
         ].map(pre => (
           <button key={pre.label}
             onClick={() => onChange({ pitch: pre.p, yaw: pre.y })}
-            className="text-[9px] font-bold text-[--foreground-muted] hover:text-[--accent] hover:bg-[--accent-subtle] transition-colors py-1.5 rounded-md border border-[--border] bg-[--bg-surface]">
+            className="text-[11px] font-bold text-[--foreground-muted] hover:text-[--accent] hover:bg-[--accent-subtle] transition-colors py-1.5 rounded-md border border-[--border] bg-[--bg-surface]">
             {pre.label}
           </button>
         ))}
       </div>
       <button onClick={() => onChange({ pitch: 30, yaw: 30 })}
-        className="w-full flex items-center justify-center gap-1.5 text-[10px] font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors py-1">
+        className="w-full flex items-center justify-center gap-1.5 text-[12px] font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors py-1">
         <RotateCcw size={10} /> Reset
       </button>
     </div>
@@ -348,7 +356,7 @@ function TogglePill({ label, active, onClick, icon: Icon }: {
   return (
     <button onClick={onClick}
       className={cn(
-        "px-3 py-2 rounded-lg border text-[11px] font-medium transition-all duration-150 flex items-center gap-1.5",
+        "px-3 py-2 rounded-lg border text-[13px] font-medium transition-all duration-150 flex items-center gap-1.5",
         active
           ? "border-[--accent] bg-[--accent] text-[--bg-base] font-semibold"
           : "border-[--border] hover:border-[--border-accent] bg-[--bg-surface] text-[--foreground-muted] hover:text-[--foreground]"
@@ -463,7 +471,7 @@ const RATIO_DIMENSIONS: Record<string, { w: number; h: number }> = {
   '9:16': { w: 9, h: 16 }, '2:3': { w: 2, h: 3 },
 };
 
-// ── Default config (single source of truth for defaults + "modified" detection) ──
+// ── Default config ─────────────────────────────────────────────────────────
 
 const DEFAULT_CONFIG: MockupConfig = {
   object: 'business-cards',
@@ -490,10 +498,7 @@ const DEFAULT_CONFIG: MockupConfig = {
 };
 
 // ── Section "modified" detection ───────────────────────────────────────────
-//
-//  Compares current config against DEFAULT_CONFIG per-section.
-//  Returns true if user has changed anything in that section from defaults.
-//
+
 function getSectionModified(sectionId: SectionId, config: MockupConfig): boolean {
   switch (sectionId) {
     case 'ratio':         return config.imageRatio !== DEFAULT_CONFIG.imageRatio;
@@ -519,11 +524,6 @@ function getSectionModified(sectionId: SectionId, config: MockupConfig): boolean
 }
 
 // ── Preset system ──────────────────────────────────────────────────────────
-//
-//  localStorage('nb-presets') → SavedPreset[]
-//  Each preset stores the full MockupConfig + metadata.
-//  On load, we spread DEFAULT_CONFIG first to handle schema migrations.
-//
 
 interface SavedPreset {
   name: string;
@@ -553,6 +553,83 @@ function savePresetsToStorage(presets: SavedPreset[]): void {
   }
 }
 
+// ── Built-in presets ───────────────────────────────────────────────────────
+
+const BUILT_IN_PRESETS: SavedPreset[] = [
+  { name: 'Business Card Flat Lay', config: { ...DEFAULT_CONFIG, object: 'business-cards', camera: 'top-down', surface: 'white-marble', setting: 'white-studio', lighting: 'clean-studio', material: 'matte', props: ['pen-pencil', 'plant'] }, createdAt: 0 },
+  { name: 'Phone App Showcase', config: { ...DEFAULT_CONFIG, object: 'phone-screen', camera: 'three-quarter', surface: 'dark-slate', setting: 'dark-studio', lighting: 'spotlight', hand: 'holding' }, createdAt: 0 },
+  { name: 'Brand Identity Spread', config: { ...DEFAULT_CONFIG, object: 'brand-identity', camera: 'top-down', surface: 'light-oak', setting: 'sunlit-natural', lighting: 'golden-hour', props: ['coffee-cup', 'pen-pencil', 'glasses'] }, createdAt: 0 },
+  { name: 'Laptop Website Hero', config: { ...DEFAULT_CONFIG, object: 'laptop-screen', camera: 'three-quarter', surface: 'dark-walnut', setting: 'office-desk', lighting: 'window-pane' }, createdAt: 0 },
+  { name: 'Magazine Cover Editorial', config: { ...DEFAULT_CONFIG, object: 'magazine-ad', camera: 'three-quarter', surface: 'linen-fabric', setting: 'sunlit-natural', lighting: 'golden-hour' }, createdAt: 0 },
+  { name: 'Product Box Unboxing', config: { ...DEFAULT_CONFIG, object: 'product-box', camera: 'low-angle', surface: 'white-marble', setting: 'white-studio', lighting: 'clean-studio' }, createdAt: 0 },
+  { name: 'T-Shirt Lifestyle', config: { ...DEFAULT_CONFIG, object: 'tshirt', camera: 'eye-level', surface: 'concrete', setting: 'urban', lighting: 'golden-hour' }, createdAt: 0 },
+  { name: 'Poster Gallery Wall', config: { ...DEFAULT_CONFIG, object: 'poster-print', camera: 'eye-level', surface: 'white-marble', setting: 'white-studio', lighting: 'spotlight', imageRatio: '2:3' }, createdAt: 0 },
+  { name: 'Coffee Mug Morning', config: { ...DEFAULT_CONFIG, object: 'coffee-mug', camera: 'three-quarter', surface: 'light-oak', setting: 'cafe-table', lighting: 'golden-hour', props: ['book', 'plant'] }, createdAt: 0 },
+  { name: 'Billboard Night Scene', config: { ...DEFAULT_CONFIG, object: 'billboard', camera: 'low-angle', surface: 'concrete', setting: 'urban', lighting: 'neon-glow', imageRatio: '16:9' }, createdAt: 0 },
+  { name: 'Envelope & Letterhead', config: { ...DEFAULT_CONFIG, object: 'envelope', camera: 'top-down', surface: 'white-marble', setting: 'white-studio', lighting: 'clean-studio', material: 'linen' }, createdAt: 0 },
+  { name: 'Exhibition Stand Event', config: { ...DEFAULT_CONFIG, object: 'exhibition-stand', camera: 'three-quarter', surface: 'concrete', setting: 'urban', lighting: 'clean-studio', imageRatio: '16:9' }, createdAt: 0 },
+];
+
+// ── Structured prompt segments ─────────────────────────────────────────────
+
+function getPromptSegments(config: MockupConfig): { label: string; text: string }[] {
+  const segments: { label: string; text: string }[] = [];
+  const fullPrompt = generateMockupPrompt(config);
+
+  // Split the prompt into logical sections by recognizable prefixes
+  // Use the full prompt but chunk it by sentence groupings
+  const parts = fullPrompt.split('. ').filter(s => s.trim().length > 0);
+
+  // Group parts into labelled sections
+  const grouped: { label: string; texts: string[] }[] = [
+    { label: 'Style', texts: [] },
+    { label: 'Ratio', texts: [] },
+    { label: 'Object', texts: [] },
+    { label: 'Camera', texts: [] },
+    { label: 'Environment', texts: [] },
+    { label: 'Lighting', texts: [] },
+    { label: 'Material & Asset', texts: [] },
+    { label: 'Details', texts: [] },
+    { label: 'Colors', texts: [] },
+    { label: 'Render', texts: [] },
+  ];
+
+  for (const part of parts) {
+    const p = part.trim();
+    if (!p) continue;
+    if (p.includes('Hasselblad') || p.includes('megapixels') || p.includes('editorial lighting')) {
+      grouped[0].texts.push(p);
+    } else if (p.includes('aspect ratio') || p.includes('portrait') || p.includes('landscape') || p.includes('Square 1:1') || p.includes('Ultra-wide') || p.includes('Vertical 9:16') || p.includes('Classic 4:3') || p.includes('Standard 3:2') || p.includes('Tall 2:3') || p.includes('Cinematic wide')) {
+      grouped[1].texts.push(p);
+    } else if (p.includes('Shot from') || p.includes('Captured at') || p.includes('photographed from') || p.includes('Camera positioned') || p.includes('eye level') || p.includes('Extreme macro') || p.includes('isometric') || p.includes('Dutch tilt')) {
+      grouped[3].texts.push(p);
+    } else if (p.includes('floats on a seamless') || p.includes('The subject is') || p.includes('Set in') || p.includes('Set on') || p.includes('Set among') || p.includes('Set against')) {
+      grouped[4].texts.push(p);
+    } else if (p.startsWith('Lighting:') || p.includes('lighting') && p.includes('Shadow intensity')) {
+      grouped[5].texts.push(p);
+    } else if (p.startsWith('Material finish') || p.startsWith('The provided asset') || p.includes('dimensions:')) {
+      grouped[6].texts.push(p);
+    } else if (p.includes('hand') || p.includes('Hand') || p.includes('Screen effect') || p.includes('reflection') || p.includes('glare') || p.includes('light leak') || p.includes('prop') || p.startsWith('Subtle imperfection') || p.startsWith('Photographic imperfection') || p.includes('Wear and imperfection')) {
+      grouped[7].texts.push(p);
+    } else if (p.includes('Color palette') || p.includes('swatch') || p.includes('#') || p.includes('hex')) {
+      grouped[8].texts.push(p);
+    } else if (p.includes('Unreal Engine') || p.includes('8K') || p.includes('ray tracing') || p.includes('photorealistic render') || p.includes('photorealism')) {
+      grouped[9].texts.push(p);
+    } else {
+      // Object description — anything else goes here
+      grouped[2].texts.push(p);
+    }
+  }
+
+  for (const g of grouped) {
+    if (g.texts.length > 0) {
+      segments.push({ label: g.label, text: g.texts.join('. ').replace(/\.\s*\.$/, '.') + (g.texts.join('').endsWith('.') ? '' : '.') });
+    }
+  }
+
+  return segments.filter(s => s.text.trim().length > 2);
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────
 
 export default function MockupGenerator() {
@@ -562,6 +639,9 @@ export default function MockupGenerator() {
   const [copied, setCopied] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [objectCategoryFilter, setObjectCategoryFilter] = useState('all');
+  const [objectSearch, setObjectSearch] = useState('');
+  const [copyFormat, setCopyFormat] = useState<'text' | 'json'>('text');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Preset system
@@ -577,7 +657,7 @@ export default function MockupGenerator() {
     const name = presetName.trim();
     if (!name) return;
     const newPreset: SavedPreset = { name, config, createdAt: Date.now() };
-    const existing = presets.filter(p => p.name !== name); // overwrite if same name
+    const existing = presets.filter(p => p.name !== name);
     const updated = [newPreset, ...existing];
     setPresets(updated);
     savePresetsToStorage(updated);
@@ -587,7 +667,6 @@ export default function MockupGenerator() {
   };
 
   const loadPreset = (preset: SavedPreset) => {
-    // Spread DEFAULT_CONFIG first to handle schema migrations (new fields get defaults)
     setConfig({ ...DEFAULT_CONFIG, ...preset.config });
     setShowPresetPanel(false);
   };
@@ -602,12 +681,13 @@ export default function MockupGenerator() {
   const generatedPrompt = useMemo(() => generateMockupPrompt(config), [config]);
   const completeness = useMemo(() => getPromptCompleteness(config), [config]);
   const wordCount = useMemo(() => generatedPrompt.split(/\s+/).length, [generatedPrompt]);
+  const promptSegments = useMemo(() => getPromptSegments(config), [config]);
 
+  // Auto-collapse: only one section open at a time
   const toggleSection = (id: SectionId) => {
     setOpenSections(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
+      if (prev.has(id)) return new Set<SectionId>();
+      return new Set<SectionId>([id]);
     });
   };
 
@@ -641,7 +721,31 @@ export default function MockupGenerator() {
   ];
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(generatedPrompt);
+    let text = generatedPrompt;
+    if (copyFormat === 'json') {
+      const obj: Record<string, unknown> = {
+        object: config.object,
+        imageRatio: config.imageRatio,
+        camera: config.camera === 'custom' ? `custom(${Math.round(config.customAngle?.pitch ?? 0)}°/${Math.round(config.customAngle?.yaw ?? 0)}°)` : config.camera,
+        surface: config.infiniteBackground ? null : config.surface,
+        setting: config.infiniteBackground ? null : config.setting,
+        infiniteBackground: config.infiniteBackground ? config.infiniteBgColor : false,
+        lighting: config.lighting,
+        intensity: config.intensity,
+        material: config.material,
+        assetInput: config.assetInput,
+        props: config.props,
+        hand: config.hand,
+        screenEffects: config.screenEffects,
+        imperfections: config.imperfections,
+        colors: config.swatchColors,
+        colorPalette: config.colorPalette,
+        assetDescription: config.assetDescription,
+        prompt: generatedPrompt,
+      };
+      text = JSON.stringify(obj, null, 2);
+    }
+    navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -685,103 +789,169 @@ export default function MockupGenerator() {
     return true;
   });
 
-  // Filtered objects for category tabs
-  const filteredObjects = objectCategoryFilter === 'all'
-    ? OBJECTS
-    : OBJECTS.filter(o => {
-        const cat = OBJECT_CATEGORIES.find(c => c.id === objectCategoryFilter);
-        return cat?.objects.includes(o.id as ObjectType);
-      });
+  // Filtered objects for category tabs + search
+  const filteredObjects = OBJECTS.filter(o => {
+    const catMatch = objectCategoryFilter === 'all'
+      ? true
+      : OBJECT_CATEGORIES.find(c => c.id === objectCategoryFilter)?.objects.includes(o.id as ObjectType) ?? false;
+    const searchMatch = objectSearch.trim() === ''
+      ? true
+      : o.label.toLowerCase().includes(objectSearch.trim().toLowerCase());
+    return catMatch && searchMatch;
+  });
 
   // Aspect ratio for canvas frame
   const ratioData = RATIO_DIMENSIONS[config.imageRatio] || { w: 4, h: 3 };
 
-  return (
-    <main className="flex min-h-screen bg-[--bg-base] text-[--foreground]">
-      {/* ── Sidebar ── */}
-      <aside className="w-[360px] min-w-[360px] border-r border-[--border] bg-[--bg-raised] flex flex-col h-screen sticky top-0">
-        {/* Logo */}
-        <div className="px-7 pt-6 pb-5 border-b border-[--border]">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[--accent] to-[--accent-dim] flex items-center justify-center">
-              <Wand2 size={16} className="text-[--bg-base]" strokeWidth={2.5} />
-            </div>
-            <div>
-              <span className="text-[9px] font-bold tracking-[0.25em] text-[--accent] uppercase block leading-none mb-0.5">
-                Nano Banana Pro
-              </span>
-              <h1 className="text-lg font-serif text-[--foreground] leading-none">Mockup Studio</h1>
-            </div>
+  // Pill reset helper: reset a specific config key to default
+  const resetPillValue = (key: string) => {
+    switch (key) {
+      case 'Ratio': setConfig(prev => ({ ...prev, imageRatio: DEFAULT_CONFIG.imageRatio })); break;
+      case 'Object': setConfig(prev => ({ ...prev, object: DEFAULT_CONFIG.object, objectDetails: DEFAULT_CONFIG.objectDetails })); break;
+      case 'Input': setConfig(prev => ({ ...prev, assetInput: DEFAULT_CONFIG.assetInput, assetDimensions: DEFAULT_CONFIG.assetDimensions })); break;
+      case 'Camera': setConfig(prev => ({ ...prev, camera: DEFAULT_CONFIG.camera, customAngle: null })); break;
+      case 'BG': setConfig(prev => ({ ...prev, infiniteBackground: false, infiniteBgColor: DEFAULT_CONFIG.infiniteBgColor })); break;
+      case 'Surface': setConfig(prev => ({ ...prev, surface: DEFAULT_CONFIG.surface })); break;
+      case 'Setting': setConfig(prev => ({ ...prev, setting: DEFAULT_CONFIG.setting })); break;
+      case 'Light': setConfig(prev => ({ ...prev, lighting: DEFAULT_CONFIG.lighting, intensity: DEFAULT_CONFIG.intensity })); break;
+      case 'Material': setConfig(prev => ({ ...prev, material: DEFAULT_CONFIG.material })); break;
+      case 'Colors': setConfig(prev => ({ ...prev, swatchColors: [] })); break;
+      case 'Props': setConfig(prev => ({ ...prev, props: [] })); break;
+      case 'Hand': setConfig(prev => ({ ...prev, hand: 'none' })); break;
+      case 'FX': setConfig(prev => ({ ...prev, screenEffects: [] })); break;
+      case 'Wear': setConfig(prev => ({ ...prev, imperfections: [] })); break;
+    }
+  };
+
+  const summaryPills = [
+    { k: 'Ratio', v: config.imageRatio },
+    { k: 'Object', v: label(OBJECTS, config.object) },
+    { k: 'Input', v: label(ASSET_INPUTS, config.assetInput) },
+    { k: 'Camera', v: config.camera === 'custom' ? `${Math.round(config.customAngle?.pitch ?? 0)}°/${Math.round(config.customAngle?.yaw ?? 0)}°` : label(CAMERAS, config.camera) },
+    ...(config.infiniteBackground
+      ? [{ k: 'BG', v: `Infinite ${config.infiniteBgColor}` }]
+      : [
+          { k: 'Surface', v: label(SURFACES, config.surface) },
+          { k: 'Setting', v: label(SETTINGS, config.setting) },
+        ]),
+    { k: 'Light', v: `${label(LIGHTINGS, config.lighting)} ${config.intensity}%` },
+    { k: 'Material', v: label(MATERIALS, config.material) },
+    ...(config.swatchColors.length > 0 ? [{ k: 'Colors', v: `${config.swatchColors.length}` }] : []),
+    ...(config.props.length > 0 ? [{ k: 'Props', v: `${config.props.length}` }] : []),
+    ...(config.hand !== 'none' ? [{ k: 'Hand', v: label(HANDS, config.hand) }] : []),
+    ...(config.screenEffects.length > 0 ? [{ k: 'FX', v: `${config.screenEffects.length}` }] : []),
+    ...(config.imperfections.length > 0 ? [{ k: 'Wear', v: `${config.imperfections.length}` }] : []),
+  ];
+
+  // ── Sidebar content (shared between desktop and mobile) ─────────────────
+
+  const SidebarContent = () => (
+    <>
+      {/* Logo */}
+      <div className="px-7 pt-6 pb-5 border-b border-[--border] shrink-0">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[--accent] to-[--accent-dim] flex items-center justify-center">
+            <Wand2 size={16} className="text-[--bg-base]" strokeWidth={2.5} />
           </div>
+          <div>
+            <span className="text-[11px] font-bold tracking-[0.25em] text-[--accent] uppercase block leading-none mb-0.5">
+              Nano Banana Pro
+            </span>
+            <h1 className="text-lg font-serif text-[--foreground] leading-none">Mockup Studio</h1>
+          </div>
+          {/* Mobile close button */}
+          <button
+            className="ml-auto md:hidden text-[--foreground-dim] hover:text-[--foreground] p-1"
+            onClick={() => setSidebarOpen(false)}>
+            <X size={18} />
+          </button>
+        </div>
+      </div>
+
+      {/* Presets + Prompt quality */}
+      <div className="border-b border-[--border] shrink-0">
+        {/* Preset bar */}
+        <div className="px-7 py-2.5 flex items-center gap-2">
+          <button onClick={() => setShowPresetPanel(!showPresetPanel)}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-semibold transition-all",
+              showPresetPanel
+                ? "bg-[--accent-subtle] text-[--accent] border border-[--border-accent]"
+                : "text-[--foreground-muted] hover:text-[--foreground] hover:bg-[--bg-surface] border border-transparent"
+            )}>
+            <FolderOpen size={12} />
+            Presets
+            {(presets.length > 0 || BUILT_IN_PRESETS.length > 0) && (
+              <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-[--accent-subtle] text-[--accent] text-[10px] font-bold">{presets.length + BUILT_IN_PRESETS.length}</span>
+            )}
+          </button>
+          <div className="flex-1" />
+          <button onClick={() => setConfig(DEFAULT_CONFIG)}
+            className="text-[11px] font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1">
+            <RotateCcw size={9} /> Reset all
+          </button>
         </div>
 
-        {/* Presets + Prompt quality */}
-        <div className="border-b border-[--border]">
-          {/* Preset bar */}
-          <div className="px-7 py-2.5 flex items-center gap-2">
-            <button onClick={() => setShowPresetPanel(!showPresetPanel)}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all",
-                showPresetPanel
-                  ? "bg-[--accent-subtle] text-[--accent] border border-[--border-accent]"
-                  : "text-[--foreground-muted] hover:text-[--foreground] hover:bg-[--bg-surface] border border-transparent"
-              )}>
-              <FolderOpen size={12} />
-              Presets
-              {presets.length > 0 && (
-                <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-[--accent-subtle] text-[--accent] text-[8px] font-bold">{presets.length}</span>
-              )}
-            </button>
-            <div className="flex-1" />
-            <button onClick={() => setConfig(DEFAULT_CONFIG)}
-              className="text-[9px] font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1">
-              <RotateCcw size={9} /> Reset all
-            </button>
-          </div>
+        {/* Preset panel (expandable) */}
+        <AnimatePresence>
+          {showPresetPanel && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden">
+              <div className="px-7 pb-3 space-y-2.5">
+                {/* Save new preset */}
+                <div className="flex gap-1.5">
+                  <input type="text" value={presetName}
+                    onChange={e => setPresetName(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && savePreset()}
+                    placeholder="Preset name..."
+                    className="flex-1 px-2.5 py-1.5 text-[13px] bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]" />
+                  <button onClick={savePreset} disabled={!presetName.trim()}
+                    className={cn(
+                      "flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all",
+                      presetSaved
+                        ? "bg-[--success]/20 text-[--success] border border-[--success]/30"
+                        : presetName.trim()
+                          ? "bg-[--accent] text-[--bg-base] hover:bg-[--accent-hover]"
+                          : "bg-[--bg-surface] text-[--foreground-dim] border border-[--border] cursor-not-allowed"
+                    )}>
+                    {presetSaved ? <><Check size={11} /> Saved</> : <><Save size={11} /> Save</>}
+                  </button>
+                </div>
 
-          {/* Preset panel (expandable) */}
-          <AnimatePresence>
-            {showPresetPanel && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden">
-                <div className="px-7 pb-3 space-y-2.5">
-                  {/* Save new preset */}
-                  <div className="flex gap-1.5">
-                    <input type="text" value={presetName}
-                      onChange={e => setPresetName(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && savePreset()}
-                      placeholder="Preset name..."
-                      className="flex-1 px-2.5 py-1.5 text-[11px] bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]" />
-                    <button onClick={savePreset} disabled={!presetName.trim()}
-                      className={cn(
-                        "flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all",
-                        presetSaved
-                          ? "bg-[--success]/20 text-[--success] border border-[--success]/30"
-                          : presetName.trim()
-                            ? "bg-[--accent] text-[--bg-base] hover:bg-[--accent-hover]"
-                            : "bg-[--bg-surface] text-[--foreground-dim] border border-[--border] cursor-not-allowed"
-                      )}>
-                      {presetSaved ? <><Check size={11} /> Saved</> : <><Save size={11} /> Save</>}
-                    </button>
+                {/* Built-in presets */}
+                <div>
+                  <p className="text-[11px] font-bold text-[--foreground-dim] uppercase tracking-widest mb-1.5">Built-in</p>
+                  <div className="space-y-1 max-h-[140px] overflow-y-auto">
+                    {BUILT_IN_PRESETS.map(preset => (
+                      <div key={preset.name}
+                        className="flex items-center gap-2 px-2.5 py-2 rounded-lg border border-[--border] bg-[--bg-inset] hover:border-[--accent-dim] transition-colors">
+                        <button onClick={() => loadPreset(preset)}
+                          className="flex-1 text-left text-[12px] font-medium text-[--foreground-muted] hover:text-[--foreground] transition-colors truncate">
+                          {preset.name}
+                        </button>
+                        <span className="text-[10px] text-[--accent] font-bold border border-[--border-accent] rounded px-1 shrink-0">Built-in</span>
+                      </div>
+                    ))}
                   </div>
+                </div>
 
-                  {/* Preset list */}
-                  {presets.length === 0 ? (
-                    <p className="text-[10px] text-[--foreground-dim] py-2 text-center">No saved presets yet</p>
-                  ) : (
-                    <div className="space-y-1 max-h-[160px] overflow-y-auto">
+                {/* User presets */}
+                {presets.length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-bold text-[--foreground-dim] uppercase tracking-widest mb-1.5">My Presets</p>
+                    <div className="space-y-1 max-h-[120px] overflow-y-auto">
                       {presets.map(preset => (
                         <div key={preset.name}
                           className="flex items-center gap-2 px-2.5 py-2 rounded-lg border border-[--border] bg-[--bg-surface] hover:border-[--border-accent] transition-colors group">
                           <button onClick={() => loadPreset(preset)}
-                            className="flex-1 text-left text-[11px] font-medium text-[--foreground-muted] hover:text-[--foreground] transition-colors truncate">
+                            className="flex-1 text-left text-[12px] font-medium text-[--foreground-muted] hover:text-[--foreground] transition-colors truncate">
                             {preset.name}
                           </button>
-                          <span className="text-[8px] text-[--foreground-dim] font-mono shrink-0">
+                          <span className="text-[10px] text-[--foreground-dim] font-mono shrink-0">
                             {new Date(preset.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                           </span>
                           <button onClick={() => deletePreset(preset.name)}
@@ -791,158 +961,182 @@ export default function MockupGenerator() {
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  </div>
+                )}
 
-          {/* Prompt quality indicator */}
-          <div className="px-7 py-2.5 flex items-center gap-3">
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[9px] font-bold tracking-widest text-[--foreground-dim] uppercase">Prompt richness</span>
-                <span className="text-[10px] font-bold text-[--accent]">{completeness.label}</span>
+                {presets.length === 0 && (
+                  <p className="text-[12px] text-[--foreground-dim] py-1 text-center">No saved presets yet</p>
+                )}
               </div>
-              <div className="h-1 bg-[--border] rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-[--accent-dim] to-[--accent]"
-                  initial={false}
-                  animate={{ width: `${completeness.score}%` }}
-                  transition={{ duration: 0.4, ease: 'easeOut' }}
-                />
-              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Prompt quality indicator */}
+        <div className="px-7 py-2.5 flex items-center gap-3">
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">Prompt richness</span>
+              <span className="text-[12px] font-bold text-[--accent]">{completeness.label}</span>
             </div>
-            <span className="text-[18px] font-bold font-mono text-[--accent] tabular-nums">{completeness.score}</span>
+            <div className="h-1 bg-[--border] rounded-full overflow-hidden">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-[--accent-dim] to-[--accent]"
+                initial={false}
+                animate={{ width: `${completeness.score}%` }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+              />
+            </div>
           </div>
+          <span className="text-[18px] font-bold font-mono text-[--accent] tabular-nums">{completeness.score}</span>
         </div>
+      </div>
 
-        {/* Sections */}
-        <nav className="flex-1 overflow-y-auto">
-          <div className="py-0.5">
-            {visibleSections.map((section) => {
-              const isOpen = openSections.has(section.id);
-              const Icon = section.icon;
-              const isModified = getSectionModified(section.id, config);
+      {/* Sections */}
+      <nav className="flex-1 overflow-y-auto">
+        <div className="py-0.5">
+          {visibleSections.map((section) => {
+            const isOpen = openSections.has(section.id);
+            const Icon = section.icon;
+            const isModified = getSectionModified(section.id, config);
 
-              let summary = '';
-              switch (section.id) {
-                case 'ratio': summary = label(IMAGE_RATIOS, config.imageRatio); break;
-                case 'object': summary = label(OBJECTS, config.object); break;
-                case 'object-details': {
-                  const defs = OBJECT_OPTIONS[config.object] ?? [];
-                  const customized = defs.filter(d => (config.objectDetails[d.key] ?? d.default) !== d.default).length;
-                  summary = customized > 0 ? `${customized} customized` : 'Defaults'; break;
-                }
-                case 'asset-input': summary = label(ASSET_INPUTS, config.assetInput); break;
-                case 'camera': summary = config.camera === 'custom' ? 'Custom 3D' : label(CAMERAS, config.camera); break;
-                case 'surface': summary = label(SURFACES, config.surface); break;
-                case 'setting': summary = label(SETTINGS, config.setting); break;
-                case 'lighting': summary = label(LIGHTINGS, config.lighting); break;
-                case 'colors': summary = config.swatchColors.length > 0 ? `${config.swatchColors.length} colors` : 'None'; break;
-                case 'props': summary = config.props.length > 0 ? `${config.props.length} selected` : 'None'; break;
-                case 'hand': summary = label(HANDS, config.hand); break;
-                case 'screen-fx': summary = config.screenEffects.length > 0 ? `${config.screenEffects.length} active` : 'None'; break;
-                case 'imperfections': summary = config.imperfections.length > 0 ? `${config.imperfections.length} selected` : 'None'; break;
-                case 'infinite-bg': summary = config.infiniteBackground ? 'On' : 'Off'; break;
-                case 'brand': summary = config.assetDescription ? 'Configured' : 'Set up'; break;
+            let summary = '';
+            switch (section.id) {
+              case 'ratio': summary = label(IMAGE_RATIOS, config.imageRatio); break;
+              case 'object': summary = label(OBJECTS, config.object); break;
+              case 'object-details': {
+                const defs = OBJECT_OPTIONS[config.object] ?? [];
+                const customized = defs.filter(d => (config.objectDetails[d.key] ?? d.default) !== d.default).length;
+                summary = customized > 0 ? `${customized} customized` : 'Defaults'; break;
               }
+              case 'asset-input': summary = label(ASSET_INPUTS, config.assetInput); break;
+              case 'camera': summary = config.camera === 'custom' ? 'Custom 3D' : label(CAMERAS, config.camera); break;
+              case 'surface': summary = label(SURFACES, config.surface); break;
+              case 'setting': summary = label(SETTINGS, config.setting); break;
+              case 'lighting': summary = label(LIGHTINGS, config.lighting); break;
+              case 'colors': summary = config.swatchColors.length > 0 ? `${config.swatchColors.length} colors` : 'None'; break;
+              case 'props': summary = config.props.length > 0 ? `${config.props.length} selected` : 'None'; break;
+              case 'hand': summary = label(HANDS, config.hand); break;
+              case 'screen-fx': summary = config.screenEffects.length > 0 ? `${config.screenEffects.length} active` : 'None'; break;
+              case 'imperfections': summary = config.imperfections.length > 0 ? `${config.imperfections.length} selected` : 'None'; break;
+              case 'infinite-bg': summary = config.infiniteBackground ? 'On' : 'Off'; break;
+              case 'brand': summary = config.assetDescription ? 'Configured' : 'Set up'; break;
+            }
 
-              return (
-                <div key={section.id} className="border-b border-[--border]">
-                  <button onClick={() => toggleSection(section.id)}
-                    className={cn(
-                      "w-full flex items-center justify-between px-7 py-3 transition-colors",
-                      isModified && !isOpen ? "bg-[--accent-subtle]/50" : "",
-                      isOpen ? "bg-[--accent-subtle]" : "hover:bg-[--bg-surface-hover]"
+            return (
+              <div key={section.id} className="border-b border-[--border]">
+                <button onClick={() => toggleSection(section.id)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-7 py-3 transition-colors",
+                    isModified && !isOpen ? "bg-[--accent-subtle]/50" : "",
+                    isOpen ? "bg-[--accent-subtle]" : "hover:bg-[--bg-surface-hover]"
+                  )}>
+                  <div className="flex items-center gap-2.5">
+                    {isModified ? (
+                      <div className="w-1.5 h-1.5 rounded-full bg-[--accent] shrink-0 shadow-[0_0_6px_rgba(196,168,130,0.5)]" />
+                    ) : (
+                      <div className="w-1.5 h-1.5 rounded-full bg-transparent shrink-0" />
+                    )}
+                    <Icon size={14} className={cn(
+                      isModified ? "text-[--accent]" : isOpen ? "text-[--accent]" : "text-[--foreground-dim]"
+                    )} strokeWidth={2} />
+                    <span className={cn(
+                      "text-[13px] font-semibold tracking-wide uppercase",
+                      isModified ? "text-[--accent]" : isOpen ? "text-[--accent]" : "text-[--foreground-muted]"
                     )}>
-                    <div className="flex items-center gap-2.5">
-                      {/* Modified indicator dot */}
-                      {isModified ? (
-                        <div className="w-1.5 h-1.5 rounded-full bg-[--accent] shrink-0 shadow-[0_0_6px_rgba(196,168,130,0.5)]" />
-                      ) : (
-                        <div className="w-1.5 h-1.5 rounded-full bg-transparent shrink-0" />
-                      )}
-                      <Icon size={14} className={cn(
-                        isModified ? "text-[--accent]" : isOpen ? "text-[--accent]" : "text-[--foreground-dim]"
-                      )} strokeWidth={2} />
-                      <span className={cn(
-                        "text-[11px] font-semibold tracking-wide uppercase",
-                        isModified ? "text-[--accent]" : isOpen ? "text-[--accent]" : "text-[--foreground-muted]"
-                      )}>
-                        {section.label}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={cn(
-                        "text-[10px] font-medium truncate max-w-[100px]",
-                        isModified ? "text-[--accent-dim]" : "text-[--foreground-dim]"
-                      )}>{summary}</span>
-                      <ChevronDown size={12} className={cn(
-                        "text-[--foreground-dim] transition-transform duration-200",
-                        isOpen && "rotate-180"
-                      )} />
-                    </div>
-                  </button>
+                      {section.label}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "text-[12px] font-medium truncate max-w-[100px]",
+                      isModified ? "text-[--accent-dim]" : "text-[--foreground-dim]"
+                    )}>{summary}</span>
+                    <ChevronDown size={12} className={cn(
+                      "text-[--foreground-dim] transition-transform duration-200",
+                      isOpen && "rotate-180"
+                    )} />
+                  </div>
+                </button>
 
-                  <AnimatePresence>
-                    {isOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden">
-                        <div className="px-7 pb-4 pt-1">
+                <AnimatePresence>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden">
+                      <div className="px-7 pb-4 pt-1">
 
-                          {/* ── Image Ratio ── */}
-                          {section.id === 'ratio' && (
-                            <div className="grid grid-cols-4 gap-1.5">
-                              {IMAGE_RATIOS.map(r => {
-                                const rd = RATIO_DIMENSIONS[r.id] || { w: 4, h: 3 };
-                                const isActive = config.imageRatio === r.id;
-                                return (
-                                  <button key={r.id}
-                                    onClick={() => setConfig({ ...config, imageRatio: r.id as ImageRatio })}
-                                    className={cn(
-                                      "flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-lg border transition-all",
-                                      isActive
-                                        ? "border-[--accent] bg-[--accent] text-[--bg-base] font-semibold"
-                                        : "border-[--border] bg-[--bg-surface] text-[--foreground-muted] hover:border-[--border-accent]"
-                                    )}>
-                                    <div className="flex items-center justify-center w-8 h-8">
-                                      <div className={cn(
-                                        "border-2 rounded-sm",
-                                        isActive ? "border-[--accent]" : "border-[--foreground-dim]"
-                                      )} style={{
-                                        width: `${Math.min(24, (rd.w / Math.max(rd.w, rd.h)) * 24)}px`,
-                                        height: `${Math.min(24, (rd.h / Math.max(rd.w, rd.h)) * 24)}px`,
-                                      }} />
-                                    </div>
-                                    <span className="text-[9px] font-bold">{r.id}</span>
-                                  </button>
-                                );
-                              })}
+                        {/* ── Image Ratio ── */}
+                        {section.id === 'ratio' && (
+                          <div className="grid grid-cols-4 gap-1.5">
+                            {IMAGE_RATIOS.map(r => {
+                              const rd = RATIO_DIMENSIONS[r.id] || { w: 4, h: 3 };
+                              const isActive = config.imageRatio === r.id;
+                              return (
+                                <button key={r.id}
+                                  onClick={() => setConfig({ ...config, imageRatio: r.id as ImageRatio })}
+                                  className={cn(
+                                    "flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-lg border transition-all",
+                                    isActive
+                                      ? "border-[--accent] bg-[--accent] text-[--bg-base] font-semibold"
+                                      : "border-[--border] bg-[--bg-surface] text-[--foreground-muted] hover:border-[--border-accent]"
+                                  )}>
+                                  <div className="flex items-center justify-center w-8 h-8">
+                                    <div className={cn(
+                                      "border-2 rounded-sm",
+                                      isActive ? "border-[--accent]" : "border-[--foreground-dim]"
+                                    )} style={{
+                                      width: `${Math.min(24, (rd.w / Math.max(rd.w, rd.h)) * 24)}px`,
+                                      height: `${Math.min(24, (rd.h / Math.max(rd.w, rd.h)) * 24)}px`,
+                                    }} />
+                                  </div>
+                                  <span className="text-[11px] font-bold">{r.id}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* ── Object ── */}
+                        {section.id === 'object' && (
+                          <div className="space-y-3">
+                            {/* Search input */}
+                            <div className="relative">
+                              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[--foreground-dim] pointer-events-none" />
+                              <input
+                                type="text"
+                                value={objectSearch}
+                                onChange={e => setObjectSearch(e.target.value)}
+                                placeholder="Search objects..."
+                                className="w-full pl-8 pr-3 py-2 text-[13px] bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]"
+                              />
+                              {objectSearch && (
+                                <button onClick={() => setObjectSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[--foreground-dim] hover:text-[--foreground]">
+                                  <X size={12} />
+                                </button>
+                              )}
                             </div>
-                          )}
-
-                          {/* ── Object ── */}
-                          {section.id === 'object' && (
-                            <div className="space-y-3">
-                              <div className="flex gap-1 overflow-x-auto pb-1">
-                                {OBJECT_CATEGORIES.map(cat => (
-                                  <button key={cat.id}
-                                    onClick={() => setObjectCategoryFilter(cat.id)}
-                                    className={cn(
-                                      "px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider whitespace-nowrap transition-all",
-                                      objectCategoryFilter === cat.id
-                                        ? "bg-[--accent] text-[--bg-base]"
-                                        : "text-[--foreground-dim] hover:text-[--foreground-muted] hover:bg-[--bg-surface]"
-                                    )}>
-                                    {cat.label}
-                                  </button>
-                                ))}
-                              </div>
+                            {/* Category tabs */}
+                            <div className="flex gap-1 overflow-x-auto pb-1">
+                              {OBJECT_CATEGORIES.map(cat => (
+                                <button key={cat.id}
+                                  onClick={() => setObjectCategoryFilter(cat.id)}
+                                  className={cn(
+                                    "px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider whitespace-nowrap transition-all",
+                                    objectCategoryFilter === cat.id
+                                      ? "bg-[--accent] text-[--bg-base]"
+                                      : "text-[--foreground-dim] hover:text-[--foreground-muted] hover:bg-[--bg-surface]"
+                                  )}>
+                                  {cat.label}
+                                </button>
+                              ))}
+                            </div>
+                            {filteredObjects.length === 0 ? (
+                              <p className="text-[13px] text-[--foreground-dim] py-2 text-center">No objects match your search</p>
+                            ) : (
                               <div className="grid grid-cols-2 gap-1.5">
                                 {filteredObjects.map(obj => {
                                   const ObjIcon = OBJECT_ICONS[obj.id] || Package;
@@ -951,7 +1145,7 @@ export default function MockupGenerator() {
                                     <button key={obj.id}
                                       onClick={() => setConfig({ ...config, object: obj.id as ObjectType, objectDetails: getObjectDefaults(obj.id as ObjectType) })}
                                       className={cn(
-                                        "flex items-center gap-2 px-2.5 py-2 rounded-lg border text-left transition-all text-[10px] font-medium",
+                                        "flex items-center gap-2 px-2.5 py-2 rounded-lg border text-left transition-all text-[12px] font-medium",
                                         isActive
                                           ? "border-[--accent] bg-[--accent] text-[--bg-base] font-semibold"
                                           : "border-[--border] hover:border-[--border-accent] bg-[--bg-surface] text-[--foreground-muted] hover:text-[--foreground]"
@@ -962,410 +1156,468 @@ export default function MockupGenerator() {
                                   );
                                 })}
                               </div>
-                            </div>
-                          )}
+                            )}
+                          </div>
+                        )}
 
-                          {/* ── Object Details ── */}
-                          {section.id === 'object-details' && (
-                            <div className="space-y-4">
-                              {(OBJECT_OPTIONS[config.object] ?? []).map(opt => (
-                                <div key={opt.key} className="space-y-1.5">
-                                  <label className="text-[9px] font-bold tracking-widest text-[--foreground-dim] uppercase">{opt.label}</label>
-                                  <div className={cn("grid gap-1.5", opt.choices.length <= 3 ? "grid-cols-3" : "grid-cols-2")}>
-                                    {opt.choices.map(choice => (
-                                      <TogglePill key={choice.id} label={choice.label}
-                                        active={(config.objectDetails[opt.key] ?? opt.default) === choice.id}
-                                        onClick={() => setConfig(prev => ({
-                                          ...prev, objectDetails: { ...prev.objectDetails, [opt.key]: choice.id },
-                                        }))} />
-                                    ))}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* ── Asset Input ── */}
-                          {section.id === 'asset-input' && (
-                            <div className="space-y-3">
-                              <div className="grid grid-cols-1 gap-1.5">
-                                {ASSET_INPUTS.map(ai => (
-                                  <TogglePill key={ai.id} label={ai.label} active={config.assetInput === ai.id}
-                                    onClick={() => setConfig({ ...config, assetInput: ai.id as AssetInputType })} />
-                                ))}
-                              </div>
-                              {config.assetInput === 'design-custom' && (
-                                <div className="space-y-1.5">
-                                  <label className="text-[9px] font-bold tracking-widest text-[--foreground-dim] uppercase">Dimensions</label>
-                                  <input type="text" value={config.assetDimensions}
-                                    onChange={e => setConfig({ ...config, assetDimensions: e.target.value })}
-                                    placeholder="e.g. 1920x1080px, A4, 210x297mm"
-                                    className="w-full p-2.5 text-[11px] bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]" />
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* ── Camera Angle ── */}
-                          {section.id === 'camera' && (
-                            <div className="space-y-3">
-                              <div className="grid grid-cols-2 gap-1.5">
-                                {CAMERAS.map(cam => (
-                                  <TogglePill key={cam.id} label={cam.label} active={config.camera === cam.id}
-                                    onClick={() => setConfig({
-                                      ...config, camera: cam.id as CameraAngle,
-                                      customAngle: cam.id === 'custom' ? (config.customAngle || { pitch: 30, yaw: 30 }) : config.customAngle,
-                                    })} />
-                                ))}
-                              </div>
-                              {config.camera === 'custom' && (
-                                <AngleWidget angle={config.customAngle || { pitch: 30, yaw: 30 }}
-                                  onChange={(a) => setConfig({ ...config, customAngle: a })} />
-                              )}
-                            </div>
-                          )}
-
-                          {/* ── Surface ── */}
-                          {section.id === 'surface' && (
-                            <div className="grid grid-cols-2 gap-1.5">
-                              {SURFACES.map(srf => (
-                                <TogglePill key={srf.id} label={srf.label} active={config.surface === srf.id}
-                                  onClick={() => setConfig({ ...config, surface: srf.id as SurfaceType })} />
-                              ))}
-                            </div>
-                          )}
-
-                          {/* ── Setting ── */}
-                          {section.id === 'setting' && (
-                            <div className="grid grid-cols-2 gap-1.5">
-                              {SETTINGS.map(s => (
-                                <TogglePill key={s.id} label={s.label} active={config.setting === s.id}
-                                  onClick={() => setConfig({ ...config, setting: s.id as SettingType })} />
-                              ))}
-                            </div>
-                          )}
-
-                          {/* ── Lighting ── */}
-                          {section.id === 'lighting' && (
-                            <div className="space-y-3">
-                              <div className="grid grid-cols-2 gap-1.5">
-                                {LIGHTINGS.map(lt => (
-                                  <TogglePill key={lt.id} label={lt.label} active={config.lighting === lt.id}
-                                    onClick={() => setConfig({ ...config, lighting: lt.id as LightingType })} />
-                                ))}
-                              </div>
-                              <div className="space-y-2 pt-1">
-                                <div className="flex justify-between items-center">
-                                  <label className="text-[9px] font-bold tracking-widest text-[--foreground-dim] uppercase">Intensity</label>
-                                  <span className="text-[11px] font-mono font-bold text-[--accent]">{config.intensity}%</span>
-                                </div>
-                                <input type="range" min="0" max="100" value={config.intensity}
-                                  onChange={e => setConfig({ ...config, intensity: parseInt(e.target.value) })}
-                                  className="w-full cursor-pointer" />
-                              </div>
-                            </div>
-                          )}
-
-                          {/* ── Colors ── */}
-                          {section.id === 'colors' && (
-                            <div className="space-y-3">
-                              <div className="flex items-center gap-2">
-                                {config.swatchColors.map((color, i) => (
-                                  <div key={i} className="relative group">
-                                    <label className="block w-10 h-10 rounded-lg border-2 border-[--border] cursor-pointer overflow-hidden hover:border-[--accent-dim] transition-colors"
-                                      style={{ backgroundColor: color }}>
-                                      <input type="color" value={color}
-                                        onChange={e => updateSwatchColor(i, e.target.value)}
-                                        className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
-                                    </label>
-                                    <button onClick={() => removeSwatchColor(i)}
-                                      className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[--danger] text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <X size={8} strokeWidth={3} />
-                                    </button>
-                                    <span className="block text-[7px] font-mono text-[--foreground-dim] text-center mt-1 leading-none">{color}</span>
-                                  </div>
-                                ))}
-                                {config.swatchColors.length < 5 && (
-                                  <label className="relative w-10 h-10 rounded-lg border-2 border-dashed border-[--border] cursor-pointer flex items-center justify-center hover:border-[--accent-dim] transition-colors">
-                                    <Plus size={14} className="text-[--foreground-dim]" />
-                                    <input type="color" value="#C4A882"
-                                      onChange={e => addSwatchColor(e.target.value)}
-                                      className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
-                                  </label>
-                                )}
-                              </div>
-                              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageExtract} className="hidden" />
-                              <button onClick={() => fileInputRef.current?.click()} disabled={extracting}
-                                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-[--border] text-[11px] font-medium transition-all bg-[--bg-surface] text-[--foreground-muted] hover:border-[--border-accent] hover:text-[--foreground]">
-                                {extracting ? (
-                                  <><div className="w-3 h-3 border-2 border-[--accent]/30 border-t-[--accent] rounded-full animate-spin" /><span>Extracting...</span></>
-                                ) : (
-                                  <><ImagePlus size={14} /><span>Extract from Image</span></>
-                                )}
-                              </button>
-                              <p className="text-[9px] text-[--foreground-dim]">100% local — never uploaded.</p>
-                              {config.swatchColors.length > 0 && (
-                                <button onClick={() => setConfig({ ...config, swatchColors: [] })}
-                                  className="text-[10px] font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1">
-                                  <RotateCcw size={10} /> Clear colors
-                                </button>
-                              )}
-                            </div>
-                          )}
-
-                          {/* ── Props ── */}
-                          {section.id === 'props' && (
-                            <div className="space-y-2">
-                              <p className="text-[9px] text-[--foreground-dim]">Multi-select. Props appear near the hero object.</p>
-                              <div className="grid grid-cols-2 gap-1.5">
-                                {PROPS.map(p => (
-                                  <TogglePill key={p.id} label={p.label} active={config.props.includes(p.id as PropType)}
-                                    onClick={() => toggleProp(p.id as PropType)} />
-                                ))}
-                              </div>
-                              {config.props.length > 0 && (
-                                <button onClick={() => setConfig({ ...config, props: [] })}
-                                  className="text-[10px] font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1 pt-1">
-                                  <RotateCcw size={10} /> Clear all
-                                </button>
-                              )}
-                            </div>
-                          )}
-
-                          {/* ── Hand ── */}
-                          {section.id === 'hand' && (
-                            <div className="grid grid-cols-2 gap-1.5">
-                              {HANDS.map(h => (
-                                <TogglePill key={h.id} label={h.label} active={config.hand === h.id}
-                                  onClick={() => setConfig({ ...config, hand: h.id as HandMode })} />
-                              ))}
-                            </div>
-                          )}
-
-                          {/* ── Screen Effects ── */}
-                          {section.id === 'screen-fx' && (
-                            <div className="space-y-2">
-                              <p className="text-[9px] text-[--foreground-dim]">Adds realism to screen mockups. Multi-select.</p>
-                              <div className="grid grid-cols-1 gap-1.5">
-                                {SCREEN_EFFECTS.map(fx => (
-                                  <TogglePill key={fx.id} label={fx.label} active={config.screenEffects.includes(fx.id as ScreenEffectType)}
-                                    onClick={() => toggleScreenEffect(fx.id as ScreenEffectType)} />
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* ── Imperfections ── */}
-                          {section.id === 'imperfections' && (
-                            <div className="space-y-2">
-                              <p className="text-[9px] text-[--foreground-dim]">Ultra-subtle details for photographic realism.</p>
-                              <div className="grid grid-cols-2 gap-1.5">
-                                {availableImperfections.map(imp => (
-                                  <TogglePill key={imp.id} label={imp.label} active={config.imperfections.includes(imp.id as ImperfectionType)}
-                                    onClick={() => toggleImperfection(imp.id as ImperfectionType)} />
-                                ))}
-                              </div>
-                              {config.imperfections.length > 0 && (
-                                <button onClick={() => setConfig({ ...config, imperfections: [] })}
-                                  className="text-[10px] font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1 pt-1">
-                                  <RotateCcw size={10} /> Clear all
-                                </button>
-                              )}
-                            </div>
-                          )}
-
-                          {/* ── Infinite Background ── */}
-                          {section.id === 'infinite-bg' && (
-                            <div className="space-y-3">
-                              <button onClick={() => setConfig({ ...config, infiniteBackground: !config.infiniteBackground })}
-                                className={cn(
-                                  "w-full flex items-center justify-between px-3 py-2.5 rounded-lg border transition-all text-[11px] font-medium",
-                                  config.infiniteBackground
-                                    ? "border-[--accent] bg-[--accent] text-[--bg-base] font-semibold"
-                                    : "border-[--border] hover:border-[--border-accent] bg-[--bg-surface] text-[--foreground-muted]"
-                                )}>
-                                <span>{config.infiniteBackground ? 'Infinite BG: ON' : 'Infinite BG: OFF'}</span>
-                                <div className={cn("w-8 h-4 rounded-full transition-colors relative",
-                                  config.infiniteBackground ? "bg-[--accent]" : "bg-[--border-light]")}>
-                                  <div className={cn(
-                                    "absolute top-0.5 w-3 h-3 rounded-full bg-[--foreground] shadow-sm transition-transform",
-                                    config.infiniteBackground ? "translate-x-4" : "translate-x-0.5"
-                                  )} />
-                                </div>
-                              </button>
-                              {config.infiniteBackground && (
-                                <div className="space-y-2.5">
-                                  <label className="text-[9px] font-bold tracking-widest text-[--foreground-dim] uppercase">Background Color</label>
-                                  <div className="flex items-center gap-3">
-                                    <input type="color" value={config.infiniteBgColor}
-                                      onChange={e => setConfig({ ...config, infiniteBgColor: e.target.value })}
-                                      className="w-10 h-10 rounded-lg border border-[--border] cursor-pointer p-0.5 bg-transparent" />
-                                    <input type="text" value={config.infiniteBgColor}
-                                      onChange={e => setConfig({ ...config, infiniteBgColor: e.target.value })}
-                                      className="flex-1 p-2.5 text-[11px] font-mono bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]" />
-                                  </div>
-                                  {config.swatchColors.length > 0 && (
-                                    <div className="space-y-1.5">
-                                      <label className="text-[9px] font-bold tracking-widest text-[--foreground-dim] uppercase">From your palette</label>
-                                      <div className="flex items-center gap-2">
-                                        {config.swatchColors.map((color, i) => (
-                                          <button key={i}
-                                            onClick={() => setConfig({ ...config, infiniteBgColor: color })}
-                                            className={cn(
-                                              "w-8 h-8 rounded-lg border-2 transition-all hover:scale-110",
-                                              config.infiniteBgColor === color ? "border-[--accent] ring-1 ring-[--accent]" : "border-[--border]"
-                                            )}
-                                            style={{ backgroundColor: color }} title={color} />
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-                                  <p className="text-[9px] text-[--foreground-dim]">Replaces Surface & Setting with a seamless infinite backdrop.</p>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* ── Brand Details ── */}
-                          {section.id === 'brand' && (
-                            <div className="space-y-3">
-                              <div className="space-y-1.5">
-                                <label className="text-[9px] font-bold tracking-widest text-[--foreground-dim] uppercase">Asset Description</label>
-                                <textarea value={config.assetDescription}
-                                  onChange={e => setConfig({ ...config, assetDescription: e.target.value })}
-                                  placeholder="e.g. A minimalist serif logo for a boutique hotel, embossed in dark olive green..."
-                                  className="w-full h-20 p-2.5 text-[11px] bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] resize-none text-[--foreground] placeholder:text-[--foreground-dim]" />
-                              </div>
-                              <div className="space-y-1.5">
-                                <label className="text-[9px] font-bold tracking-widest text-[--foreground-dim] uppercase">Color Palette</label>
-                                <input type="text" value={config.colorPalette}
-                                  onChange={e => setConfig({ ...config, colorPalette: e.target.value })}
-                                  className="w-full p-2.5 text-[11px] bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]"
-                                  placeholder="Warm neutrals, off-whites..." />
-                              </div>
-                              <div className="space-y-1.5">
-                                <label className="text-[9px] font-bold tracking-widest text-[--foreground-dim] uppercase">Material Finish</label>
-                                <div className="grid grid-cols-2 gap-1.5">
-                                  {MATERIALS.map(mat => (
-                                    <TogglePill key={mat.id} label={mat.label} active={config.material === mat.id}
-                                      onClick={() => setConfig({ ...config, material: mat.id as MaterialType })} />
+                        {/* ── Object Details ── */}
+                        {section.id === 'object-details' && (
+                          <div className="space-y-4">
+                            {(OBJECT_OPTIONS[config.object] ?? []).map(opt => (
+                              <div key={opt.key} className="space-y-1.5">
+                                <label className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">{opt.label}</label>
+                                <div className={cn("grid gap-1.5", opt.choices.length <= 3 ? "grid-cols-3" : "grid-cols-2")}>
+                                  {opt.choices.map(choice => (
+                                    <TogglePill key={choice.id} label={choice.label}
+                                      active={(config.objectDetails[opt.key] ?? opt.default) === choice.id}
+                                      onClick={() => setConfig(prev => ({
+                                        ...prev, objectDetails: { ...prev.objectDetails, [opt.key]: choice.id },
+                                      }))} />
                                   ))}
                                 </div>
                               </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* ── Asset Input ── */}
+                        {section.id === 'asset-input' && (
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-1 gap-1.5">
+                              {ASSET_INPUTS.map(ai => (
+                                <TogglePill key={ai.id} label={ai.label} active={config.assetInput === ai.id}
+                                  onClick={() => setConfig({ ...config, assetInput: ai.id as AssetInputType })} />
+                              ))}
                             </div>
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })}
-          </div>
-        </nav>
+                            {config.assetInput === 'design-custom' && (
+                              <div className="space-y-1.5">
+                                <label className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">Dimensions</label>
+                                <input type="text" value={config.assetDimensions}
+                                  onChange={e => setConfig({ ...config, assetDimensions: e.target.value })}
+                                  placeholder="e.g. 1920x1080px, A4, 210x297mm"
+                                  className="w-full p-2.5 text-[13px] bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]" />
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* ── Camera Angle ── */}
+                        {section.id === 'camera' && (
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-1.5">
+                              {CAMERAS.map(cam => (
+                                <TogglePill key={cam.id} label={cam.label} active={config.camera === cam.id}
+                                  onClick={() => setConfig({
+                                    ...config, camera: cam.id as CameraAngle,
+                                    customAngle: cam.id === 'custom' ? (config.customAngle || { pitch: 30, yaw: 30 }) : config.customAngle,
+                                  })} />
+                              ))}
+                            </div>
+                            {config.camera === 'custom' && (
+                              <AngleWidget angle={config.customAngle || { pitch: 30, yaw: 30 }}
+                                onChange={(a) => setConfig({ ...config, customAngle: a })} />
+                            )}
+                          </div>
+                        )}
+
+                        {/* ── Surface ── */}
+                        {section.id === 'surface' && (
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {SURFACES.map(srf => (
+                              <TogglePill key={srf.id} label={srf.label} active={config.surface === srf.id}
+                                onClick={() => setConfig({ ...config, surface: srf.id as SurfaceType })} />
+                            ))}
+                          </div>
+                        )}
+
+                        {/* ── Setting ── */}
+                        {section.id === 'setting' && (
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {SETTINGS.map(s => (
+                              <TogglePill key={s.id} label={s.label} active={config.setting === s.id}
+                                onClick={() => setConfig({ ...config, setting: s.id as SettingType })} />
+                            ))}
+                          </div>
+                        )}
+
+                        {/* ── Lighting ── */}
+                        {section.id === 'lighting' && (
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-1.5">
+                              {LIGHTINGS.map(lt => (
+                                <TogglePill key={lt.id} label={lt.label} active={config.lighting === lt.id}
+                                  onClick={() => setConfig({ ...config, lighting: lt.id as LightingType })} />
+                              ))}
+                            </div>
+                            <div className="space-y-2 pt-1">
+                              <div className="flex justify-between items-center">
+                                <label className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">Intensity</label>
+                                <span className="text-[13px] font-mono font-bold text-[--accent]">{config.intensity}%</span>
+                              </div>
+                              <input type="range" min="0" max="100" value={config.intensity}
+                                onChange={e => setConfig({ ...config, intensity: parseInt(e.target.value) })}
+                                className="w-full cursor-pointer" />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* ── Colors ── */}
+                        {section.id === 'colors' && (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                              {config.swatchColors.map((color, i) => (
+                                <div key={i} className="relative group">
+                                  <label className="block w-10 h-10 rounded-lg border-2 border-[--border] cursor-pointer overflow-hidden hover:border-[--accent-dim] transition-colors"
+                                    style={{ backgroundColor: color }}>
+                                    <input type="color" value={color}
+                                      onChange={e => updateSwatchColor(i, e.target.value)}
+                                      className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
+                                  </label>
+                                  <button onClick={() => removeSwatchColor(i)}
+                                    className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[--danger] text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <X size={8} strokeWidth={3} />
+                                  </button>
+                                  <span className="block text-[9px] font-mono text-[--foreground-dim] text-center mt-1 leading-none">{color}</span>
+                                </div>
+                              ))}
+                              {config.swatchColors.length < 5 && (
+                                <label className="relative w-10 h-10 rounded-lg border-2 border-dashed border-[--border] cursor-pointer flex items-center justify-center hover:border-[--accent-dim] transition-colors">
+                                  <Plus size={14} className="text-[--foreground-dim]" />
+                                  <input type="color" value="#C4A882"
+                                    onChange={e => addSwatchColor(e.target.value)}
+                                    className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
+                                </label>
+                              )}
+                            </div>
+                            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageExtract} className="hidden" />
+                            <button onClick={() => fileInputRef.current?.click()} disabled={extracting}
+                              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-[--border] text-[13px] font-medium transition-all bg-[--bg-surface] text-[--foreground-muted] hover:border-[--border-accent] hover:text-[--foreground]">
+                              {extracting ? (
+                                <><div className="w-3 h-3 border-2 border-[--accent]/30 border-t-[--accent] rounded-full animate-spin" /><span>Extracting...</span></>
+                              ) : (
+                                <><ImagePlus size={14} /><span>Extract from Image</span></>
+                              )}
+                            </button>
+                            <p className="text-[11px] text-[--foreground-dim]">100% local — never uploaded.</p>
+                            {config.swatchColors.length > 0 && (
+                              <button onClick={() => setConfig({ ...config, swatchColors: [] })}
+                                className="text-[12px] font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1">
+                                <RotateCcw size={10} /> Clear colors
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* ── Props ── */}
+                        {section.id === 'props' && (
+                          <div className="space-y-2">
+                            <p className="text-[11px] text-[--foreground-dim]">Multi-select. Props appear near the hero object.</p>
+                            <div className="grid grid-cols-2 gap-1.5">
+                              {PROPS.map(p => (
+                                <TogglePill key={p.id} label={p.label} active={config.props.includes(p.id as PropType)}
+                                  onClick={() => toggleProp(p.id as PropType)} />
+                              ))}
+                            </div>
+                            {config.props.length > 0 && (
+                              <button onClick={() => setConfig({ ...config, props: [] })}
+                                className="text-[12px] font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1 pt-1">
+                                <RotateCcw size={10} /> Clear all
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* ── Hand ── */}
+                        {section.id === 'hand' && (
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {HANDS.map(h => (
+                              <TogglePill key={h.id} label={h.label} active={config.hand === h.id}
+                                onClick={() => setConfig({ ...config, hand: h.id as HandMode })} />
+                            ))}
+                          </div>
+                        )}
+
+                        {/* ── Screen Effects ── */}
+                        {section.id === 'screen-fx' && (
+                          <div className="space-y-2">
+                            <p className="text-[11px] text-[--foreground-dim]">Adds realism to screen mockups. Multi-select.</p>
+                            <div className="grid grid-cols-1 gap-1.5">
+                              {SCREEN_EFFECTS.map(fx => (
+                                <TogglePill key={fx.id} label={fx.label} active={config.screenEffects.includes(fx.id as ScreenEffectType)}
+                                  onClick={() => toggleScreenEffect(fx.id as ScreenEffectType)} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* ── Imperfections ── */}
+                        {section.id === 'imperfections' && (
+                          <div className="space-y-2">
+                            <p className="text-[11px] text-[--foreground-dim]">Ultra-subtle details for photographic realism.</p>
+                            <div className="grid grid-cols-2 gap-1.5">
+                              {availableImperfections.map(imp => (
+                                <TogglePill key={imp.id} label={imp.label} active={config.imperfections.includes(imp.id as ImperfectionType)}
+                                  onClick={() => toggleImperfection(imp.id as ImperfectionType)} />
+                              ))}
+                            </div>
+                            {config.imperfections.length > 0 && (
+                              <button onClick={() => setConfig({ ...config, imperfections: [] })}
+                                className="text-[12px] font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1 pt-1">
+                                <RotateCcw size={10} /> Clear all
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* ── Infinite Background ── */}
+                        {section.id === 'infinite-bg' && (
+                          <div className="space-y-3">
+                            <button onClick={() => setConfig({ ...config, infiniteBackground: !config.infiniteBackground })}
+                              className={cn(
+                                "w-full flex items-center justify-between px-3 py-2.5 rounded-lg border transition-all text-[13px] font-medium",
+                                config.infiniteBackground
+                                  ? "border-[--accent] bg-[--accent] text-[--bg-base] font-semibold"
+                                  : "border-[--border] hover:border-[--border-accent] bg-[--bg-surface] text-[--foreground-muted]"
+                              )}>
+                              <span>{config.infiniteBackground ? 'Infinite BG: ON' : 'Infinite BG: OFF'}</span>
+                              <div className={cn("w-8 h-4 rounded-full transition-colors relative",
+                                config.infiniteBackground ? "bg-[--accent]" : "bg-[--border-light]")}>
+                                <div className={cn(
+                                  "absolute top-0.5 w-3 h-3 rounded-full bg-[--foreground] shadow-sm transition-transform",
+                                  config.infiniteBackground ? "translate-x-4" : "translate-x-0.5"
+                                )} />
+                              </div>
+                            </button>
+                            {config.infiniteBackground && (
+                              <div className="space-y-2.5">
+                                <label className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">Background Color</label>
+                                <div className="flex items-center gap-3">
+                                  <input type="color" value={config.infiniteBgColor}
+                                    onChange={e => setConfig({ ...config, infiniteBgColor: e.target.value })}
+                                    className="w-10 h-10 rounded-lg border border-[--border] cursor-pointer p-0.5 bg-transparent" />
+                                  <input type="text" value={config.infiniteBgColor}
+                                    onChange={e => setConfig({ ...config, infiniteBgColor: e.target.value })}
+                                    className="flex-1 p-2.5 text-[13px] font-mono bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]" />
+                                </div>
+                                {config.swatchColors.length > 0 && (
+                                  <div className="space-y-1.5">
+                                    <label className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">From your palette</label>
+                                    <div className="flex items-center gap-2">
+                                      {config.swatchColors.map((color, i) => (
+                                        <button key={i}
+                                          onClick={() => setConfig({ ...config, infiniteBgColor: color })}
+                                          className={cn(
+                                            "w-8 h-8 rounded-lg border-2 transition-all hover:scale-110",
+                                            config.infiniteBgColor === color ? "border-[--accent] ring-1 ring-[--accent]" : "border-[--border]"
+                                          )}
+                                          style={{ backgroundColor: color }} title={color} />
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                <p className="text-[11px] text-[--foreground-dim]">Replaces Surface & Setting with a seamless infinite backdrop.</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* ── Brand Details ── */}
+                        {section.id === 'brand' && (
+                          <div className="space-y-3">
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">Asset Description</label>
+                              <textarea value={config.assetDescription}
+                                onChange={e => setConfig({ ...config, assetDescription: e.target.value })}
+                                placeholder="e.g. A minimalist serif logo for a boutique hotel, embossed in dark olive green..."
+                                className="w-full h-20 p-2.5 text-[13px] bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] resize-none text-[--foreground] placeholder:text-[--foreground-dim]" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">Color Palette</label>
+                              <input type="text" value={config.colorPalette}
+                                onChange={e => setConfig({ ...config, colorPalette: e.target.value })}
+                                className="w-full p-2.5 text-[13px] bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]"
+                                placeholder="Warm neutrals, off-whites..." />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">Material Finish</label>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                {MATERIALS.map(mat => (
+                                  <TogglePill key={mat.id} label={mat.label} active={config.material === mat.id}
+                                    onClick={() => setConfig({ ...config, material: mat.id as MaterialType })} />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+        </div>
+      </nav>
+    </>
+  );
+
+  return (
+    <main
+      className="flex min-h-screen bg-[--bg-base] text-[--foreground]"
+      style={{ fontFamily: SYSTEM_FONT }}>
+
+      {/* ── Mobile backdrop ── */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-30 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Sidebar (desktop: sticky; mobile: slide-out drawer) ── */}
+      <aside className={cn(
+        "w-[360px] min-w-[360px] border-r border-[--border] bg-[--bg-raised] flex flex-col h-screen",
+        // Desktop
+        "md:sticky md:top-0",
+        // Mobile
+        "fixed top-0 left-0 z-40 transition-transform duration-300 md:translate-x-0",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <SidebarContent />
       </aside>
 
       {/* ── Canvas Area ── */}
       <section className="flex-1 flex flex-col min-h-screen relative">
         {/* Top bar */}
-        <header className="sticky top-0 z-20 backdrop-blur-xl bg-[--bg-base]/80 border-b border-[--border] px-8 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-[10px] font-medium text-[--foreground-dim]">
-              <span className="text-[--foreground-muted]">{label(OBJECTS, config.object)}</span>
-              <CircleDot size={4} className="text-[--foreground-dim]" />
-              <span>{config.camera === 'custom' ? 'Custom 3D' : label(CAMERAS, config.camera)}</span>
-              <CircleDot size={4} className="text-[--foreground-dim]" />
-              <span>{label(LIGHTINGS, config.lighting)}</span>
-              <CircleDot size={4} className="text-[--foreground-dim]" />
+        <header className="sticky top-0 z-20 backdrop-blur-xl bg-[--bg-base]/80 border-b border-[--border] px-4 md:px-8 py-3">
+          <div className="flex items-center justify-between gap-3">
+            {/* Mobile hamburger */}
+            <button
+              className="md:hidden text-[--foreground-muted] hover:text-[--foreground] p-1 shrink-0"
+              onClick={() => setSidebarOpen(true)}>
+              <Menu size={20} />
+            </button>
+
+            <div className="hidden md:flex items-center gap-2 text-[12px] font-medium text-[--foreground-dim] min-w-0">
+              <span className="text-[--foreground-muted] truncate">{label(OBJECTS, config.object)}</span>
+              <CircleDot size={4} className="text-[--foreground-dim] shrink-0" />
+              <span className="truncate">{config.camera === 'custom' ? 'Custom 3D' : label(CAMERAS, config.camera)}</span>
+              <CircleDot size={4} className="text-[--foreground-dim] shrink-0" />
+              <span className="truncate">{label(LIGHTINGS, config.lighting)}</span>
+              <CircleDot size={4} className="text-[--foreground-dim] shrink-0" />
               <span>{config.imageRatio}</span>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 text-[10px] text-[--foreground-dim]">
+
+            <div className="flex items-center gap-2 md:gap-3 ml-auto">
+              <div className="hidden md:flex items-center gap-1.5 text-[12px] text-[--foreground-dim]">
                 <Hash size={11} />
                 <span className="font-mono">{wordCount} words</span>
               </div>
+
+              {/* Copy format toggle */}
+              <div className="flex items-center rounded-lg border border-[--border] overflow-hidden bg-[--bg-surface]">
+                <button
+                  onClick={() => setCopyFormat('text')}
+                  className={cn(
+                    "px-2.5 py-1.5 text-[11px] font-bold transition-all flex items-center gap-1",
+                    copyFormat === 'text'
+                      ? "bg-[--accent] text-[--bg-base]"
+                      : "text-[--foreground-dim] hover:text-[--foreground]"
+                  )}>
+                  Text
+                </button>
+                <button
+                  onClick={() => setCopyFormat('json')}
+                  className={cn(
+                    "px-2.5 py-1.5 text-[11px] font-bold transition-all flex items-center gap-1",
+                    copyFormat === 'json'
+                      ? "bg-[--accent] text-[--bg-base]"
+                      : "text-[--foreground-dim] hover:text-[--foreground]"
+                  )}>
+                  <Braces size={11} /> JSON
+                </button>
+              </div>
+
               <button onClick={handleCopy}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-bold transition-all",
+                  "flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg text-[13px] font-bold transition-all",
                   copied
                     ? "bg-[--success]/20 text-[--success] border border-[--success]/30"
                     : "bg-[--accent] text-[--bg-base] hover:bg-[--accent-hover] shadow-lg shadow-[--accent]/10"
                 )}>
-                {copied ? <><Check size={13} /> Copied</> : <><Copy size={13} /> Copy Prompt</>}
+                {copied ? <><Check size={13} /> Copied</> : <><Copy size={13} /><span className="hidden sm:inline"> Copy {copyFormat === 'json' ? 'JSON' : 'Prompt'}</span></>}
               </button>
             </div>
           </div>
         </header>
 
         {/* Canvas content */}
-        <div className="flex-1 flex items-center justify-center p-8 overflow-y-auto">
+        <div className="flex-1 flex items-start justify-center p-4 md:p-8 overflow-y-auto">
           <div className="w-full max-w-4xl">
-            {/* Config summary pills */}
+            {/* Config summary pills — clickable to reset */}
             <div className="flex flex-wrap gap-1.5 mb-6">
-              {[
-                { k: 'Ratio', v: config.imageRatio },
-                { k: 'Object', v: label(OBJECTS, config.object) },
-                { k: 'Input', v: label(ASSET_INPUTS, config.assetInput) },
-                { k: 'Camera', v: config.camera === 'custom' ? `${Math.round(config.customAngle?.pitch ?? 0)}°/${Math.round(config.customAngle?.yaw ?? 0)}°` : label(CAMERAS, config.camera) },
-                ...(config.infiniteBackground
-                  ? [{ k: 'BG', v: `Infinite ${config.infiniteBgColor}` }]
-                  : [
-                      { k: 'Surface', v: label(SURFACES, config.surface) },
-                      { k: 'Setting', v: label(SETTINGS, config.setting) },
-                    ]),
-                { k: 'Light', v: `${label(LIGHTINGS, config.lighting)} ${config.intensity}%` },
-                { k: 'Material', v: label(MATERIALS, config.material) },
-                ...(config.swatchColors.length > 0 ? [{ k: 'Colors', v: `${config.swatchColors.length}` }] : []),
-                ...(config.props.length > 0 ? [{ k: 'Props', v: `${config.props.length}` }] : []),
-                ...(config.hand !== 'none' ? [{ k: 'Hand', v: label(HANDS, config.hand) }] : []),
-                ...(config.screenEffects.length > 0 ? [{ k: 'FX', v: `${config.screenEffects.length}` }] : []),
-                ...(config.imperfections.length > 0 ? [{ k: 'Wear', v: `${config.imperfections.length}` }] : []),
-              ].map(pill => (
-                <div key={pill.k} className="flex items-center gap-1.5 px-2.5 py-1 bg-[--bg-surface] border border-[--border] rounded-full">
-                  <span className="text-[8px] font-bold text-[--foreground-dim] uppercase">{pill.k}</span>
-                  <span className="text-[10px] font-semibold text-[--foreground-muted]">{pill.v}</span>
-                </div>
+              {summaryPills.map(pill => (
+                <button
+                  key={pill.k}
+                  onClick={() => resetPillValue(pill.k)}
+                  className="group flex items-center gap-1.5 px-2.5 py-1 bg-[--bg-surface] border border-[--border] rounded-full hover:border-[--accent-dim] hover:bg-[--accent-subtle] transition-all">
+                  <span className="text-[10px] font-bold text-[--foreground-dim] uppercase">{pill.k}</span>
+                  <span className="text-[12px] font-semibold text-[--foreground-muted]">{pill.v}</span>
+                  <X size={9} className="text-[--foreground-dim] opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
               ))}
               {/* Inline swatch dots */}
               {config.swatchColors.length > 0 && (
-                <div className="flex items-center gap-1 px-2.5 py-1 bg-[--bg-surface] border border-[--border] rounded-full">
+                <button
+                  onClick={() => setConfig(prev => ({ ...prev, swatchColors: [] }))}
+                  className="group flex items-center gap-1 px-2.5 py-1 bg-[--bg-surface] border border-[--border] rounded-full hover:border-[--accent-dim] hover:bg-[--accent-subtle] transition-all">
                   {config.swatchColors.map((c, i) => (
                     <div key={i} className="w-3.5 h-3.5 rounded-full border border-[--border-light]" style={{ backgroundColor: c }} />
                   ))}
-                </div>
+                  <X size={9} className="text-[--foreground-dim] opacity-0 group-hover:opacity-100 transition-opacity ml-0.5" />
+                </button>
               )}
             </div>
 
-            {/* Aspect ratio frame with prompt */}
+            {/* Aspect ratio frame with structured prompt */}
             <div className="relative">
-              {/* Frame with correct aspect ratio */}
               <div
                 className="relative bg-[--bg-raised] rounded-2xl border border-[--border] overflow-hidden shadow-2xl shadow-black/20"
                 style={{
                   aspectRatio: `${ratioData.w} / ${ratioData.h}`,
-                  maxHeight: '65vh',
+                  maxHeight: '80vh',
+                  minHeight: '360px',
                 }}>
                 {/* Subtle corner ratio indicator */}
-                <div className="absolute top-4 left-4 text-[9px] font-mono font-bold text-[--foreground-dim]/40">
+                <div className="absolute top-4 left-4 text-[11px] font-mono font-bold text-[--foreground-dim]/40">
                   {config.imageRatio}
                 </div>
 
                 {/* Prompt content */}
-                <div className="absolute inset-0 p-8 flex flex-col">
+                <div className="absolute inset-0 p-6 md:p-8 flex flex-col">
                   <div className="flex items-center gap-2 mb-4 shrink-0">
                     <Sparkles size={14} className="text-[--accent]" />
-                    <h3 className="text-[9px] font-bold tracking-[0.2em] uppercase text-[--accent]">Live Prompt</h3>
+                    <h3 className="text-[11px] font-bold tracking-[0.2em] uppercase text-[--accent]">Live Prompt</h3>
                     <div className="flex-1" />
                     <div className="flex gap-1">
                       {['8K', 'Hasselblad', 'UE5'].map(tag => (
-                        <span key={tag} className="px-1.5 py-0.5 bg-[--bg-surface] text-[7px] font-bold text-[--foreground-dim] rounded border border-[--border] uppercase">{tag}</span>
+                        <span key={tag} className="px-1.5 py-0.5 bg-[--bg-surface] text-[9px] font-bold text-[--foreground-dim] rounded border border-[--border] uppercase">{tag}</span>
                       ))}
                     </div>
                   </div>
-                  <div className="flex-1 overflow-y-auto min-h-0">
-                    <p className="text-[13px] leading-[1.9] text-[--foreground] font-medium">
-                      {generatedPrompt}
-                    </p>
+                  <div className="flex-1 overflow-y-auto min-h-0 space-y-0">
+                    {promptSegments.map((seg, i) => (
+                      <div key={i} className={cn("pb-3", i < promptSegments.length - 1 && "border-b border-[--border]/40 mb-3")}>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[--accent] block mb-1">{seg.label}</span>
+                        <p className="text-[15px] leading-relaxed text-[--foreground] font-medium">{seg.text}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -1374,11 +1626,11 @@ export default function MockupGenerator() {
         </div>
 
         {/* Footer */}
-        <footer className="px-8 py-4 border-t border-[--border] flex items-center justify-between">
-          <p className="text-[10px] font-bold text-[--foreground-dim] tracking-widest uppercase">
+        <footer className="px-4 md:px-8 py-4 border-t border-[--border] flex items-center justify-between gap-4">
+          <p className="text-[11px] font-bold text-[--foreground-dim] tracking-widest uppercase">
             Built for design consistency by Benjamin Arnedo
           </p>
-          <p className="text-[10px] text-[--foreground-dim]/50 font-medium">
+          <p className="text-[11px] text-[--foreground-dim]/50 font-medium hidden md:block">
             {OBJECTS.length} objects &middot; {CAMERAS.length} angles &middot; {SURFACES.length} surfaces &middot; {LIGHTINGS.length} lights
           </p>
         </footer>
