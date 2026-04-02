@@ -216,7 +216,7 @@ function AngleWidget({ angle, onChange }: { angle: CustomAngle; onChange: (a: Cu
 
   const slabFaces = [
     { verts: [0, 1, 2, 3], nz: -1, color: '#2A2520', label: '',      isFront: false },
-    { verts: [5, 4, 7, 6], nz:  1, color: '#C4A882', label: 'front', isFront: true },
+    { verts: [5, 4, 7, 6], nz:  1, color: '#E8C840', label: 'front', isFront: true },
     { verts: [4, 0, 3, 7], nz:  0, color: '#3D332A', label: '',      isFront: false },
     { verts: [1, 5, 6, 2], nz:  0, color: '#3D332A', label: '',      isFront: false },
     { verts: [4, 5, 1, 0], nz:  0, color: '#4A3E33', label: '',      isFront: false },
@@ -1104,17 +1104,20 @@ export default function MockupGenerator() {
                         {section.id === 'object' && (
                           <div className="space-y-3">
                             {/* Search input */}
-                            <div className="relative">
+                            <div className="relative" onClick={e => e.stopPropagation()}>
                               <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[--foreground-dim] pointer-events-none" />
                               <input
+                                id="object-search-input"
                                 type="text"
                                 value={objectSearch}
-                                onChange={e => setObjectSearch(e.target.value)}
+                                onChange={e => { e.stopPropagation(); setObjectSearch(e.target.value); }}
+                                onKeyDown={e => e.stopPropagation()}
                                 placeholder="Search objects..."
-                                className="w-full pl-8 pr-3 py-2 text-[13px] bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]"
+                                autoComplete="off"
+                                className="w-full pl-8 pr-8 py-2 text-[13px] bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]"
                               />
                               {objectSearch && (
-                                <button onClick={() => setObjectSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[--foreground-dim] hover:text-[--foreground]">
+                                <button onClick={e => { e.stopPropagation(); setObjectSearch(''); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[--foreground-dim] hover:text-[--foreground]">
                                   <X size={12} />
                                 </button>
                               )}
@@ -1283,7 +1286,7 @@ export default function MockupGenerator() {
                               {config.swatchColors.length < 5 && (
                                 <label className="relative w-10 h-10 rounded-lg border-2 border-dashed border-[--border] cursor-pointer flex items-center justify-center hover:border-[--accent-dim] transition-colors">
                                   <Plus size={14} className="text-[--foreground-dim]" />
-                                  <input type="color" value="#C4A882"
+                                  <input type="color" value="#E8C840"
                                     onChange={e => addSwatchColor(e.target.value)}
                                     className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
                                 </label>
