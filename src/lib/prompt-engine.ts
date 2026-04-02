@@ -140,9 +140,9 @@ const MATERIAL_PROMPTS: Record<string, string> = {
 };
 
 const ASSET_INPUT_PROMPTS: Record<string, string> = {
-  'transparent-logo': "The provided asset is a transparent PNG logo, placed cleanly onto the surface with precise registration, no white box or background visible.",
-  'screenshot': "The provided asset is a UI screenshot, displayed pixel-perfectly on the device screen at native resolution with realistic screen rendering.",
-  'design-custom': "The provided asset is a custom design composition, mapped accurately onto the surface maintaining original proportions and color fidelity.",
+  'transparent-logo': "The provided asset is a transparent PNG logo, placed cleanly onto the surface with precise registration, no white box or background visible. The logo must be reproduced EXACTLY as provided — do not redraw, reinterpret, or generate new text or symbols.",
+  'screenshot': "The provided asset is a UI screenshot, displayed pixel-perfectly on the device screen at native resolution with realistic screen rendering. The screenshot content must appear EXACTLY as provided with zero modifications — every word, icon, layout element, and color must be faithfully preserved.",
+  'design-custom': "The provided asset is a custom design composition, mapped accurately onto the surface maintaining original proportions and color fidelity. The design must be reproduced EXACTLY as provided — do not alter, redraw, or reinterpret any element.",
 };
 
 const PROP_PROMPTS: Record<string, string> = {
@@ -254,6 +254,9 @@ export function generateMockupPrompt(config: MockupConfig): string {
   if (assetInput === 'design-custom' && assetDimensions) {
     parts.push(`The design dimensions are ${assetDimensions}.`);
   }
+
+  // CRITICAL: Asset preservation instructions
+  parts.push("CRITICAL INSTRUCTION — ASSET FIDELITY: The attached/referenced image or design asset MUST be reproduced with absolute pixel-level accuracy. DO NOT alter, redraw, regenerate, distort, warp, stretch, compress, or reinterpret ANY part of the provided asset. ALL text in the asset must remain EXACTLY as written — same words, same spelling, same font, same size, same spacing, same capitalization. DO NOT invent new text, change existing text, add text that is not in the original, or render text in a different language. ALL proportions, aspect ratios, and spatial relationships within the asset must be preserved EXACTLY — no stretching, squishing, cropping, or geometric distortion of any kind. The asset should be applied to the mockup surface using correct perspective mapping only, as if it were a real printed/displayed piece photographed in the scene. Treat the provided asset as a sacred, unmodifiable reference that must appear in the final image exactly as supplied.");
 
   // Asset description
   if (assetDescription) {
