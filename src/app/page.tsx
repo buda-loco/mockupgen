@@ -10,7 +10,8 @@ import {
   Zap, Fingerprint, Pipette, ImagePlus, X, Plus, SlidersHorizontal,
   Bus, MapPin, Flag, PanelTop, UtensilsCrossed, Apple, Wand2,
   CircleDot, Hash, Save, Trash2, FolderOpen,
-  Search, Menu, Braces, Mail,
+  Search, Menu, Braces, Mail, ArrowRight, ArrowLeft, ChevronRight,
+  Layers2, Settings2, LayoutGrid,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
@@ -307,14 +308,6 @@ function AngleWidget({ angle, onChange }: { angle: CustomAngle; onChange: (a: Cu
             <tspan fill="#E05555">X</tspan>=Pitch <tspan fill="#55B855">Y</tspan>=Yaw <tspan fill="#5577EE">Z</tspan>=Free
           </text>
         </svg>
-        {dragState.current.active && dragState.current.axis && (
-          <div className="absolute top-2 right-2 px-2 py-1 rounded bg-black/70 text-[11px] font-mono font-bold text-white backdrop-blur-sm">
-            {dragState.current.axis === 'x' && <span style={{ color: '#FF6666' }}>PITCH</span>}
-            {dragState.current.axis === 'y' && <span style={{ color: '#66DD66' }}>YAW</span>}
-            {dragState.current.axis === 'z' && <span style={{ color: '#6688FF' }}>FREE</span>}
-            {dragState.current.axis === 'trackball' && <span style={{ color: '#999' }}>FREE</span>}
-          </div>
-        )}
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-[--bg-inset] rounded-lg px-3 py-2 border border-[--border]">
@@ -449,7 +442,7 @@ const SECTIONS: { id: SectionId; label: string; icon: React.ElementType }[] = [
 // ── Prompt quality score ───────────────────────────────────────────────────
 
 function getPromptCompleteness(config: MockupConfig): { score: number; label: string } {
-  let filled = 3; // object, camera, surface always set
+  let filled = 3;
   const total = 10;
   if (config.assetDescription) filled++;
   if (config.swatchColors.length > 0) filled++;
@@ -532,6 +525,7 @@ interface SavedPreset {
 }
 
 const PRESETS_STORAGE_KEY = 'nb-presets';
+const UI_MODE_KEY = 'nb-ui-mode';
 
 function loadPresets(): SavedPreset[] {
   try {
@@ -576,11 +570,8 @@ function getPromptSegments(config: MockupConfig): { label: string; text: string 
   const segments: { label: string; text: string }[] = [];
   const fullPrompt = generateMockupPrompt(config);
 
-  // Split the prompt into logical sections by recognizable prefixes
-  // Use the full prompt but chunk it by sentence groupings
   const parts = fullPrompt.split('. ').filter(s => s.trim().length > 0);
 
-  // Group parts into labelled sections
   const grouped: { label: string; texts: string[] }[] = [
     { label: 'Style', texts: [] },
     { label: 'Ratio', texts: [] },
@@ -616,7 +607,6 @@ function getPromptSegments(config: MockupConfig): { label: string; text: string 
     } else if (p.includes('Unreal Engine') || p.includes('8K') || p.includes('ray tracing') || p.includes('photorealistic render') || p.includes('photorealism')) {
       grouped[9].texts.push(p);
     } else {
-      // Object description — anything else goes here
       grouped[2].texts.push(p);
     }
   }
@@ -630,18 +620,40 @@ function getPromptSegments(config: MockupConfig): { label: string; text: string 
   return segments.filter(s => s.text.trim().length > 2);
 }
 
+// ── Wizard steps ───────────────────────────────────────────────────────────
+
+const WIZARD_STEPS = [
+  { id: 'presets',     title: 'Welcome back!',                subtitle: 'Start fresh or pick a preset to jump right in.',      icon: Sparkles },
+  { id: 'object',      title: 'What are we making?',          subtitle: 'Choose the product you want to photograph.',           icon: Package },
+  { id: 'details',     title: 'Customize the details.',       subtitle: 'Fine-tune options specific to your object.',           icon: SlidersHorizontal },
+  { id: 'camera',      title: 'How should it look?',          subtitle: 'Pick a frame ratio and camera angle.',                 icon: Camera },
+  { id: 'environment', title: 'Set the scene.',               subtitle: 'Choose a surface and setting for your shot.',          icon: Sun },
+  { id: 'lighting',    title: 'Light it up.',                 subtitle: 'Pick a lighting mood and intensity.',                  icon: Eye },
+  { id: 'style',       title: 'Define the look.',             subtitle: 'Colors, asset type, and brand description.',           icon: Palette },
+  { id: 'extras',      title: 'Add some flair.',              subtitle: 'Optional props, hand, effects and imperfections.',     icon: Zap },
+  { id: 'review',      title: 'Your prompt is ready.',        subtitle: 'Copy it and go create something beautiful.',           icon: Check },
+] as const;
+
+type WizardStepId = typeof WIZARD_STEPS[number]['id'];
+
 // ── Main Component ─────────────────────────────────────────────────────────
 
 export default function MockupGenerator() {
   const [config, setConfig] = useState<MockupConfig>(DEFAULT_CONFIG);
+  const [uiMode, setUiMode] = useState<'wizard' | 'studio'>('wizard');
+  const [wizardStep, setWizardStep] = useState(0);
+  const [wizardDirection, setWizardDirection] = useState<'forward' | 'back'>('forward');
 
+  // Studio state
   const [openSections, setOpenSections] = useState<Set<SectionId>>(new Set(['object']));
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Shared state
   const [copied, setCopied] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [objectCategoryFilter, setObjectCategoryFilter] = useState('all');
   const [objectSearch, setObjectSearch] = useState('');
   const [copyFormat, setCopyFormat] = useState<'text' | 'json'>('text');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Preset system
@@ -650,8 +662,19 @@ export default function MockupGenerator() {
   const [showPresetPanel, setShowPresetPanel] = useState(false);
   const [presetSaved, setPresetSaved] = useState(false);
 
-  // Load presets from localStorage on mount
+  // Load presets + UI mode preference from localStorage on mount
   useEffect(() => { setPresets(loadPresets()); }, []);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(UI_MODE_KEY) as 'wizard' | 'studio' | null;
+      if (saved === 'wizard' || saved === 'studio') setUiMode(saved);
+    } catch { /* ignore */ }
+  }, []);
+
+  // Save UI mode preference
+  useEffect(() => {
+    try { localStorage.setItem(UI_MODE_KEY, uiMode); } catch { /* ignore */ }
+  }, [uiMode]);
 
   const savePreset = () => {
     const name = presetName.trim();
@@ -677,13 +700,13 @@ export default function MockupGenerator() {
     savePresetsToStorage(updated);
   };
 
-  // Live prompt — no generate button needed
+  // Live prompt
   const generatedPrompt = useMemo(() => generateMockupPrompt(config), [config]);
   const completeness = useMemo(() => getPromptCompleteness(config), [config]);
   const wordCount = useMemo(() => generatedPrompt.split(/\s+/).length, [generatedPrompt]);
   const promptSegments = useMemo(() => getPromptSegments(config), [config]);
 
-  // Auto-collapse: only one section open at a time
+  // Studio: Auto-collapse sections
   const toggleSection = (id: SectionId) => {
     setOpenSections(prev => {
       if (prev.has(id)) return new Set<SectionId>();
@@ -691,6 +714,7 @@ export default function MockupGenerator() {
     });
   };
 
+  // Config helpers
   const toggleProp = (id: PropType) => {
     setConfig(prev => ({
       ...prev,
@@ -781,13 +805,37 @@ export default function MockupGenerator() {
     arr.find(x => x.id === id)?.label ?? id;
 
   const isScreenObject = SCREEN_OBJECTS.includes(config.object);
+  const isPrintObject = PRINT_OBJECTS.includes(config.object);
+  const hasObjectDetails = !!(OBJECT_OPTIONS[config.object]?.length);
 
-  const visibleSections = SECTIONS.filter(s => {
-    if (s.id === 'screen-fx' && !isScreenObject) return false;
-    if (s.id === 'object-details' && !(OBJECT_OPTIONS[config.object]?.length)) return false;
-    if ((s.id === 'surface' || s.id === 'setting') && config.infiniteBackground) return false;
-    return true;
-  });
+  // Wizard navigation
+  const totalSteps = WIZARD_STEPS.length;
+
+  const getStepIsSkippable = (idx: number): boolean => {
+    const step = WIZARD_STEPS[idx];
+    if (step.id === 'details') return !hasObjectDetails;
+    if (step.id === 'extras') return true;
+    return false;
+  };
+
+  const goNext = () => {
+    if (wizardStep < totalSteps - 1) {
+      setWizardDirection('forward');
+      setWizardStep(s => s + 1);
+    }
+  };
+
+  const goBack = () => {
+    if (wizardStep > 0) {
+      setWizardDirection('back');
+      setWizardStep(s => s - 1);
+    }
+  };
+
+  const goToStep = (n: number) => {
+    setWizardDirection(n > wizardStep ? 'forward' : 'back');
+    setWizardStep(n);
+  };
 
   // Filtered objects for category tabs + search
   const filteredObjects = OBJECTS.filter(o => {
@@ -803,26 +851,7 @@ export default function MockupGenerator() {
   // Aspect ratio for canvas frame
   const ratioData = RATIO_DIMENSIONS[config.imageRatio] || { w: 4, h: 3 };
 
-  // Pill reset helper: reset a specific config key to default
-  const resetPillValue = (key: string) => {
-    switch (key) {
-      case 'Ratio': setConfig(prev => ({ ...prev, imageRatio: DEFAULT_CONFIG.imageRatio })); break;
-      case 'Object': setConfig(prev => ({ ...prev, object: DEFAULT_CONFIG.object, objectDetails: DEFAULT_CONFIG.objectDetails })); break;
-      case 'Input': setConfig(prev => ({ ...prev, assetInput: DEFAULT_CONFIG.assetInput, assetDimensions: DEFAULT_CONFIG.assetDimensions })); break;
-      case 'Camera': setConfig(prev => ({ ...prev, camera: DEFAULT_CONFIG.camera, customAngle: null })); break;
-      case 'BG': setConfig(prev => ({ ...prev, infiniteBackground: false, infiniteBgColor: DEFAULT_CONFIG.infiniteBgColor })); break;
-      case 'Surface': setConfig(prev => ({ ...prev, surface: DEFAULT_CONFIG.surface })); break;
-      case 'Setting': setConfig(prev => ({ ...prev, setting: DEFAULT_CONFIG.setting })); break;
-      case 'Light': setConfig(prev => ({ ...prev, lighting: DEFAULT_CONFIG.lighting, intensity: DEFAULT_CONFIG.intensity })); break;
-      case 'Material': setConfig(prev => ({ ...prev, material: DEFAULT_CONFIG.material })); break;
-      case 'Colors': setConfig(prev => ({ ...prev, swatchColors: [] })); break;
-      case 'Props': setConfig(prev => ({ ...prev, props: [] })); break;
-      case 'Hand': setConfig(prev => ({ ...prev, hand: 'none' })); break;
-      case 'FX': setConfig(prev => ({ ...prev, screenEffects: [] })); break;
-      case 'Wear': setConfig(prev => ({ ...prev, imperfections: [] })); break;
-    }
-  };
-
+  // Studio summary pills
   const summaryPills = [
     { k: 'Ratio', v: config.imageRatio },
     { k: 'Object', v: label(OBJECTS, config.object) },
@@ -843,38 +872,833 @@ export default function MockupGenerator() {
     ...(config.imperfections.length > 0 ? [{ k: 'Wear', v: `${config.imperfections.length}` }] : []),
   ];
 
-  // ── Sidebar content (shared between desktop and mobile) ─────────────────
+  const resetPillValue = (key: string) => {
+    switch (key) {
+      case 'Ratio': setConfig(prev => ({ ...prev, imageRatio: DEFAULT_CONFIG.imageRatio })); break;
+      case 'Object': setConfig(prev => ({ ...prev, object: DEFAULT_CONFIG.object, objectDetails: DEFAULT_CONFIG.objectDetails })); break;
+      case 'Input': setConfig(prev => ({ ...prev, assetInput: DEFAULT_CONFIG.assetInput, assetDimensions: DEFAULT_CONFIG.assetDimensions })); break;
+      case 'Camera': setConfig(prev => ({ ...prev, camera: DEFAULT_CONFIG.camera, customAngle: null })); break;
+      case 'BG': setConfig(prev => ({ ...prev, infiniteBackground: false, infiniteBgColor: DEFAULT_CONFIG.infiniteBgColor })); break;
+      case 'Surface': setConfig(prev => ({ ...prev, surface: DEFAULT_CONFIG.surface })); break;
+      case 'Setting': setConfig(prev => ({ ...prev, setting: DEFAULT_CONFIG.setting })); break;
+      case 'Light': setConfig(prev => ({ ...prev, lighting: DEFAULT_CONFIG.lighting, intensity: DEFAULT_CONFIG.intensity })); break;
+      case 'Material': setConfig(prev => ({ ...prev, material: DEFAULT_CONFIG.material })); break;
+      case 'Colors': setConfig(prev => ({ ...prev, swatchColors: [] })); break;
+      case 'Props': setConfig(prev => ({ ...prev, props: [] })); break;
+      case 'Hand': setConfig(prev => ({ ...prev, hand: 'none' })); break;
+      case 'FX': setConfig(prev => ({ ...prev, screenEffects: [] })); break;
+      case 'Wear': setConfig(prev => ({ ...prev, imperfections: [] })); break;
+    }
+  };
 
-  const SidebarContent = () => (
+  // ── Color swatches UI (shared between wizard + studio) ─────────────────
+
+  const ColorSwatchesUI = () => (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        {config.swatchColors.map((color, i) => (
+          <div key={i} className="relative group">
+            <label className="block w-11 h-11 rounded-xl border-2 border-[--border] cursor-pointer overflow-hidden hover:border-[--accent-dim] transition-colors"
+              style={{ backgroundColor: color }}>
+              <input type="color" value={color}
+                onChange={e => updateSwatchColor(i, e.target.value)}
+                className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
+            </label>
+            <button onClick={() => removeSwatchColor(i)}
+              className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[--danger] text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <X size={8} strokeWidth={3} />
+            </button>
+            <span className="block text-[9px] font-mono text-[--foreground-dim] text-center mt-1 leading-none">{color}</span>
+          </div>
+        ))}
+        {config.swatchColors.length < 5 && (
+          <label className="relative w-11 h-11 rounded-xl border-2 border-dashed border-[--border] cursor-pointer flex items-center justify-center hover:border-[--accent-dim] transition-colors">
+            <Plus size={14} className="text-[--foreground-dim]" />
+            <input type="color" value="#E8C840"
+              onChange={e => addSwatchColor(e.target.value)}
+              className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
+          </label>
+        )}
+      </div>
+      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageExtract} className="hidden" />
+      <button onClick={() => fileInputRef.current?.click()} disabled={extracting}
+        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-[--border] text-[13px] font-medium transition-all bg-[--bg-surface] text-[--foreground-muted] hover:border-[--border-accent] hover:text-[--foreground]">
+        {extracting ? (
+          <><div className="w-3 h-3 border-2 border-[--accent]/30 border-t-[--accent] rounded-full animate-spin" /><span>Extracting...</span></>
+        ) : (
+          <><ImagePlus size={14} /><span>Extract from Image</span></>
+        )}
+      </button>
+      <p className="text-[11px] text-[--foreground-dim]">100% local — never uploaded.</p>
+      {config.swatchColors.length > 0 && (
+        <button onClick={() => setConfig(prev => ({ ...prev, swatchColors: [] }))}
+          className="text-[12px] font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1">
+          <RotateCcw size={10} /> Clear colors
+        </button>
+      )}
+    </div>
+  );
+
+  // ── Mode switcher button ────────────────────────────────────────────────
+
+  const ModeSwitcher = ({ compact = false }: { compact?: boolean }) => (
+    <div className={cn("flex items-center rounded-xl border border-[--border] overflow-hidden bg-[--bg-surface]", compact && "text-[12px]")}>
+      <button
+        onClick={() => { setUiMode('wizard'); setWizardStep(0); }}
+        className={cn(
+          "flex items-center gap-1.5 px-3 py-2 transition-all font-semibold",
+          compact ? "text-[11px] px-2.5 py-1.5" : "text-[13px]",
+          uiMode === 'wizard'
+            ? "bg-[--accent] text-[--bg-base]"
+            : "text-[--foreground-dim] hover:text-[--foreground]"
+        )}>
+        <Wand2 size={compact ? 11 : 13} />
+        {!compact && 'Wizard'}
+      </button>
+      <button
+        onClick={() => setUiMode('studio')}
+        className={cn(
+          "flex items-center gap-1.5 px-3 py-2 transition-all font-semibold",
+          compact ? "text-[11px] px-2.5 py-1.5" : "text-[13px]",
+          uiMode === 'studio'
+            ? "bg-[--accent] text-[--bg-base]"
+            : "text-[--foreground-dim] hover:text-[--foreground]"
+        )}>
+        <LayoutGrid size={compact ? 11 : 13} />
+        {!compact && 'Studio'}
+      </button>
+    </div>
+  );
+
+  // ── Prompt display (shared canvas content) ─────────────────────────────
+
+  const PromptCanvas = ({ compact = false }: { compact?: boolean }) => (
+    <div className={cn("relative", compact && "")}>
+      <div
+        className="relative bg-[--bg-raised] rounded-2xl border border-[--border] overflow-hidden shadow-2xl shadow-black/20"
+        style={{
+          aspectRatio: `${ratioData.w} / ${ratioData.h}`,
+          maxHeight: compact ? '60vh' : '80vh',
+          minHeight: '300px',
+        }}>
+        <div className="absolute top-4 left-4 text-[11px] font-mono font-bold text-[--foreground-dim]/40">
+          {config.imageRatio}
+        </div>
+        <div className="absolute inset-0 p-6 md:p-8 flex flex-col">
+          <div className="flex items-center gap-2 mb-4 shrink-0">
+            <Sparkles size={14} className="text-[--accent]" />
+            <h3 className="text-[11px] font-bold tracking-[0.2em] uppercase text-[--accent]">Live Prompt</h3>
+            <div className="flex-1" />
+            <div className="flex gap-1">
+              {['8K', 'Hasselblad', 'UE5'].map(tag => (
+                <span key={tag} className="px-1.5 py-0.5 bg-[--bg-surface] text-[9px] font-bold text-[--foreground-dim] rounded border border-[--border] uppercase">{tag}</span>
+              ))}
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-0">
+            {promptSegments.map((seg, i) => (
+              <div key={i} className={cn("pb-3", i < promptSegments.length - 1 && "border-b border-[--border]/40 mb-3")}>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[--accent] block mb-1">{seg.label}</span>
+                <p className="text-[15px] leading-relaxed text-[--foreground] font-medium">{seg.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // WIZARD MODE
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  const slideVariants = {
+    enter: (dir: string) => ({ x: dir === 'forward' ? 60 : -60, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (dir: string) => ({ x: dir === 'forward' ? -60 : 60, opacity: 0 }),
+  };
+
+  const stepInfo = WIZARD_STEPS[wizardStep];
+
+  // Wizard step content
+  const renderWizardStep = () => {
+    switch (stepInfo.id) {
+
+      // ── Step 0: Quick Start / Presets ────────────────────────────────
+      case 'presets': return (
+        <div className="space-y-6">
+          <button
+            onClick={() => { setConfig(DEFAULT_CONFIG); goNext(); }}
+            className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-dashed border-[--border] hover:border-[--accent] hover:bg-[--accent-subtle] transition-all group">
+            <div className="w-12 h-12 rounded-xl bg-[--bg-surface] flex items-center justify-center shrink-0 group-hover:bg-[--accent]/10">
+              <Plus size={20} className="text-[--foreground-dim] group-hover:text-[--accent]" />
+            </div>
+            <div className="text-left">
+              <div className="text-base font-semibold text-[--foreground] mb-0.5">Start from scratch</div>
+              <div className="text-sm text-[--foreground-muted]">Begin with default settings</div>
+            </div>
+            <ArrowRight size={18} className="ml-auto text-[--foreground-dim] group-hover:text-[--accent] transition-colors" />
+          </button>
+
+          <div>
+            <p className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase mb-3">Built-in Presets</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {BUILT_IN_PRESETS.map(preset => {
+                const ObjIcon = OBJECT_ICONS[preset.config.object] || Package;
+                return (
+                  <button key={preset.name}
+                    onClick={() => { loadPreset(preset); goNext(); }}
+                    className="flex items-center gap-3 p-4 rounded-2xl border border-[--border] bg-[--bg-raised] hover:border-[--accent-dim] hover:bg-[--bg-surface] transition-all text-left group">
+                    <div className="w-10 h-10 rounded-xl bg-[--bg-surface] group-hover:bg-[--accent-subtle] flex items-center justify-center shrink-0 transition-colors">
+                      <ObjIcon size={18} className="text-[--foreground-muted] group-hover:text-[--accent]" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-[--foreground] truncate">{preset.name}</div>
+                      <div className="text-xs text-[--foreground-muted] truncate">{label(OBJECTS, preset.config.object)} &middot; {label(CAMERAS, preset.config.camera)}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {presets.length > 0 && (
+            <div>
+              <p className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase mb-3">My Presets</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {presets.map(preset => {
+                  const ObjIcon = OBJECT_ICONS[preset.config.object] || Package;
+                  return (
+                    <div key={preset.name}
+                      className="flex items-center gap-3 p-4 rounded-2xl border border-[--border] bg-[--bg-raised] hover:border-[--border-accent] transition-all group">
+                      <div className="w-10 h-10 rounded-xl bg-[--bg-surface] flex items-center justify-center shrink-0">
+                        <ObjIcon size={18} className="text-[--foreground-muted]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-[--foreground] truncate">{preset.name}</div>
+                        <div className="text-xs text-[--foreground-muted]">{new Date(preset.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>
+                      </div>
+                      <button onClick={() => { loadPreset(preset); goNext(); }}
+                        className="px-3 py-1.5 rounded-lg bg-[--bg-surface] text-[12px] font-semibold text-[--foreground-muted] hover:bg-[--accent] hover:text-[--bg-base] transition-all">
+                        Load
+                      </button>
+                      <button onClick={() => deletePreset(preset.name)}
+                        className="p-1.5 rounded-lg text-[--foreground-dim] hover:text-[--danger] hover:bg-[--danger]/10 transition-all opacity-0 group-hover:opacity-100">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+
+      // ── Step 1: Object ───────────────────────────────────────────────
+      case 'object': return (
+        <div className="space-y-4">
+          <div className="relative">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[--foreground-dim] pointer-events-none" />
+            <input
+              type="text"
+              value={objectSearch}
+              onChange={e => setObjectSearch(e.target.value)}
+              placeholder="Search objects..."
+              autoComplete="off"
+              className="w-full pl-10 pr-9 py-3 text-sm bg-[--bg-inset] border border-[--border] rounded-xl focus:outline-none focus:ring-2 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]"
+            />
+            {objectSearch && (
+              <button onClick={() => setObjectSearch('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[--foreground-dim] hover:text-[--foreground]">
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {OBJECT_CATEGORIES.map(cat => (
+              <button key={cat.id}
+                onClick={() => setObjectCategoryFilter(cat.id)}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all",
+                  objectCategoryFilter === cat.id
+                    ? "bg-[--accent] text-[--bg-base]"
+                    : "text-[--foreground-muted] hover:text-[--foreground] bg-[--bg-surface] border border-[--border]"
+                )}>
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
+          {filteredObjects.length === 0 ? (
+            <p className="text-sm text-[--foreground-muted] py-6 text-center">No objects match your search</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {filteredObjects.map(obj => {
+                const ObjIcon = OBJECT_ICONS[obj.id] || Package;
+                const isActive = config.object === obj.id;
+                return (
+                  <button key={obj.id}
+                    onClick={() => setConfig(prev => ({ ...prev, object: obj.id as ObjectType, objectDetails: getObjectDefaults(obj.id as ObjectType) }))}
+                    className={cn(
+                      "flex flex-col items-center gap-2.5 p-4 rounded-2xl border-2 text-center transition-all",
+                      isActive
+                        ? "border-[--accent] bg-[--accent] text-[--bg-base]"
+                        : "border-[--border] bg-[--bg-raised] text-[--foreground-muted] hover:border-[--accent-dim] hover:text-[--foreground]"
+                    )}>
+                    <ObjIcon size={22} strokeWidth={1.5} />
+                    <span className="text-xs font-semibold leading-tight">{obj.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+
+      // ── Step 2: Object Details ────────────────────────────────────────
+      case 'details': return (
+        <div className="space-y-6">
+          {hasObjectDetails ? (
+            <>
+              {(OBJECT_OPTIONS[config.object] ?? []).map(opt => (
+                <div key={opt.key} className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+                  <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">{opt.label}</label>
+                  <div className={cn("grid gap-2", opt.choices.length <= 3 ? "grid-cols-3" : "grid-cols-2")}>
+                    {opt.choices.map(choice => (
+                      <TogglePill key={choice.id} label={choice.label}
+                        active={(config.objectDetails[opt.key] ?? opt.default) === choice.id}
+                        onClick={() => setConfig(prev => ({
+                          ...prev, objectDetails: { ...prev.objectDetails, [opt.key]: choice.id },
+                        }))} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : (
+            <div className="py-8 text-center text-[--foreground-muted] text-sm">
+              No extra options for {label(OBJECTS, config.object)}.
+            </div>
+          )}
+
+          {isPrintObject && (
+            <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+              <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Material Finish</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {MATERIALS.map(mat => (
+                  <TogglePill key={mat.id} label={mat.label} active={config.material === mat.id}
+                    onClick={() => setConfig(prev => ({ ...prev, material: mat.id as MaterialType }))} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+
+      // ── Step 3: Camera & Ratio ────────────────────────────────────────
+      case 'camera': return (
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+            <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Image Ratio</label>
+            <div className="grid grid-cols-4 gap-2">
+              {IMAGE_RATIOS.map(r => {
+                const rd = RATIO_DIMENSIONS[r.id] || { w: 4, h: 3 };
+                const isActive = config.imageRatio === r.id;
+                return (
+                  <button key={r.id}
+                    onClick={() => setConfig(prev => ({ ...prev, imageRatio: r.id as ImageRatio }))}
+                    className={cn(
+                      "flex flex-col items-center gap-2 py-3 px-1 rounded-xl border-2 transition-all",
+                      isActive
+                        ? "border-[--accent] bg-[--accent] text-[--bg-base]"
+                        : "border-[--border] bg-[--bg-surface] text-[--foreground-muted] hover:border-[--accent-dim]"
+                    )}>
+                    <div className="flex items-center justify-center w-8 h-8">
+                      <div className={cn("border-2 rounded-sm", isActive ? "border-[--bg-base]" : "border-[--foreground-dim]")} style={{
+                        width: `${Math.min(24, (rd.w / Math.max(rd.w, rd.h)) * 24)}px`,
+                        height: `${Math.min(24, (rd.h / Math.max(rd.w, rd.h)) * 24)}px`,
+                      }} />
+                    </div>
+                    <span className="text-[11px] font-bold">{r.id}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+            <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Camera Angle</label>
+            <div className="grid grid-cols-2 gap-2">
+              {CAMERAS.map(cam => (
+                <TogglePill key={cam.id} label={cam.label} active={config.camera === cam.id}
+                  onClick={() => setConfig(prev => ({
+                    ...prev, camera: cam.id as CameraAngle,
+                    customAngle: cam.id === 'custom' ? (prev.customAngle || { pitch: 30, yaw: 30 }) : prev.customAngle,
+                  }))} />
+              ))}
+            </div>
+            {config.camera === 'custom' && (
+              <div className="pt-2">
+                <AngleWidget angle={config.customAngle || { pitch: 30, yaw: 30 }}
+                  onChange={a => setConfig(prev => ({ ...prev, customAngle: a }))} />
+              </div>
+            )}
+          </div>
+        </div>
+      );
+
+      // ── Step 4: Environment ───────────────────────────────────────────
+      case 'environment': return (
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Infinite Background</label>
+              <button
+                onClick={() => setConfig(prev => ({ ...prev, infiniteBackground: !prev.infiniteBackground }))}
+                className={cn(
+                  "w-10 h-5.5 rounded-full transition-colors relative flex items-center",
+                  config.infiniteBackground ? "bg-[--accent]" : "bg-[--border-light]"
+                )}>
+                <div className={cn(
+                  "absolute w-4 h-4 rounded-full bg-white shadow-sm transition-transform",
+                  config.infiniteBackground ? "translate-x-5" : "translate-x-0.5"
+                )} />
+              </button>
+            </div>
+            {config.infiniteBackground && (
+              <div className="flex items-center gap-3 pt-1">
+                <input type="color" value={config.infiniteBgColor}
+                  onChange={e => setConfig(prev => ({ ...prev, infiniteBgColor: e.target.value }))}
+                  className="w-11 h-11 rounded-xl border border-[--border] cursor-pointer p-0.5 bg-transparent" />
+                <input type="text" value={config.infiniteBgColor}
+                  onChange={e => setConfig(prev => ({ ...prev, infiniteBgColor: e.target.value }))}
+                  className="flex-1 p-2.5 text-sm font-mono bg-[--bg-inset] border border-[--border] rounded-xl focus:outline-none focus:ring-2 focus:ring-[--accent-dim] text-[--foreground]" />
+              </div>
+            )}
+          </div>
+
+          {!config.infiniteBackground && (
+            <>
+              <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+                <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Surface</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {SURFACES.map(srf => (
+                    <TogglePill key={srf.id} label={srf.label} active={config.surface === srf.id}
+                      onClick={() => setConfig(prev => ({ ...prev, surface: srf.id as SurfaceType }))} />
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+                <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Setting</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {SETTINGS.map(s => (
+                    <TogglePill key={s.id} label={s.label} active={config.setting === s.id}
+                      onClick={() => setConfig(prev => ({ ...prev, setting: s.id as SettingType }))} />
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      );
+
+      // ── Step 5: Lighting ──────────────────────────────────────────────
+      case 'lighting': return (
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+            <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Lighting Style</label>
+            <div className="grid grid-cols-2 gap-2">
+              {LIGHTINGS.map(lt => (
+                <TogglePill key={lt.id} label={lt.label} active={config.lighting === lt.id}
+                  onClick={() => setConfig(prev => ({ ...prev, lighting: lt.id as LightingType }))} />
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Intensity</label>
+              <span className="text-sm font-mono font-bold text-[--accent]">{config.intensity}%</span>
+            </div>
+            <input type="range" min="0" max="100" value={config.intensity}
+              onChange={e => setConfig(prev => ({ ...prev, intensity: parseInt(e.target.value) }))}
+              className="w-full cursor-pointer" />
+          </div>
+        </div>
+      );
+
+      // ── Step 6: Style & Brand ─────────────────────────────────────────
+      case 'style': return (
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+            <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Asset Input Type</label>
+            <div className="grid grid-cols-1 gap-2">
+              {ASSET_INPUTS.map(ai => (
+                <TogglePill key={ai.id} label={ai.label} active={config.assetInput === ai.id}
+                  onClick={() => setConfig(prev => ({ ...prev, assetInput: ai.id as AssetInputType }))} />
+              ))}
+            </div>
+            {config.assetInput === 'design-custom' && (
+              <div className="space-y-1.5 pt-1">
+                <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Dimensions</label>
+                <input type="text" value={config.assetDimensions}
+                  onChange={e => setConfig(prev => ({ ...prev, assetDimensions: e.target.value }))}
+                  placeholder="e.g. 1920x1080px, A4, 210x297mm"
+                  className="w-full p-3 text-sm bg-[--bg-inset] border border-[--border] rounded-xl focus:outline-none focus:ring-2 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]" />
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+            <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Color Swatches</label>
+            <ColorSwatchesUI />
+          </div>
+
+          <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+            <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Color Palette Description</label>
+            <input type="text" value={config.colorPalette ?? ''}
+              onChange={e => setConfig(prev => ({ ...prev, colorPalette: e.target.value }))}
+              placeholder="Warm neutrals, off-whites..."
+              className="w-full p-3 text-sm bg-[--bg-inset] border border-[--border] rounded-xl focus:outline-none focus:ring-2 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]" />
+          </div>
+
+          <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+            <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Asset Description</label>
+            <textarea value={config.assetDescription}
+              onChange={e => setConfig(prev => ({ ...prev, assetDescription: e.target.value }))}
+              placeholder="e.g. A minimalist serif logo for a boutique hotel, embossed in dark olive green..."
+              className="w-full h-24 p-3 text-sm bg-[--bg-inset] border border-[--border] rounded-xl focus:outline-none focus:ring-2 focus:ring-[--accent-dim] resize-none text-[--foreground] placeholder:text-[--foreground-dim]" />
+          </div>
+        </div>
+      );
+
+      // ── Step 7: Extras ────────────────────────────────────────────────
+      case 'extras': return (
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+            <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Props</label>
+            <p className="text-xs text-[--foreground-muted]">Multi-select. Props appear near the hero object.</p>
+            <div className="grid grid-cols-2 gap-2">
+              {PROPS.map(p => (
+                <TogglePill key={p.id} label={p.label} active={config.props.includes(p.id as PropType)}
+                  onClick={() => toggleProp(p.id as PropType)} />
+              ))}
+            </div>
+            {config.props.length > 0 && (
+              <button onClick={() => setConfig(prev => ({ ...prev, props: [] }))}
+                className="text-xs font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1 pt-1">
+                <RotateCcw size={10} /> Clear all
+              </button>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+            <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Hand Interaction</label>
+            <div className="grid grid-cols-2 gap-2">
+              {HANDS.map(h => (
+                <TogglePill key={h.id} label={h.label} active={config.hand === h.id}
+                  onClick={() => setConfig(prev => ({ ...prev, hand: h.id as HandMode }))} />
+              ))}
+            </div>
+          </div>
+
+          {isScreenObject && (
+            <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+              <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Screen Effects</label>
+              <div className="grid grid-cols-1 gap-2">
+                {SCREEN_EFFECTS.map(fx => (
+                  <TogglePill key={fx.id} label={fx.label} active={config.screenEffects.includes(fx.id as ScreenEffectType)}
+                    onClick={() => toggleScreenEffect(fx.id as ScreenEffectType)} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+            <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Imperfections</label>
+            <p className="text-xs text-[--foreground-muted]">Ultra-subtle details for photographic realism.</p>
+            <div className="grid grid-cols-2 gap-2">
+              {availableImperfections.map(imp => (
+                <TogglePill key={imp.id} label={imp.label} active={config.imperfections.includes(imp.id as ImperfectionType)}
+                  onClick={() => toggleImperfection(imp.id as ImperfectionType)} />
+              ))}
+            </div>
+            {config.imperfections.length > 0 && (
+              <button onClick={() => setConfig(prev => ({ ...prev, imperfections: [] }))}
+                className="text-xs font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1 pt-1">
+                <RotateCcw size={10} /> Clear all
+              </button>
+            )}
+          </div>
+        </div>
+      );
+
+      // ── Step 8: Review ────────────────────────────────────────────────
+      case 'review': return (
+        <div className="space-y-5">
+          {/* Config summary pills */}
+          <div className="flex flex-wrap gap-1.5">
+            {summaryPills.map(pill => (
+              <span key={pill.k} className="flex items-center gap-1.5 px-2.5 py-1 bg-[--bg-surface] border border-[--border] rounded-full">
+                <span className="text-[10px] font-bold text-[--foreground-dim] uppercase">{pill.k}</span>
+                <span className="text-xs font-semibold text-[--foreground-muted]">{pill.v}</span>
+              </span>
+            ))}
+            {config.swatchColors.length > 0 && (
+              <span className="flex items-center gap-1 px-2.5 py-1 bg-[--bg-surface] border border-[--border] rounded-full">
+                {config.swatchColors.map((c, i) => (
+                  <div key={i} className="w-3 h-3 rounded-full border border-[--border-light]" style={{ backgroundColor: c }} />
+                ))}
+              </span>
+            )}
+          </div>
+
+          {/* Prompt quality */}
+          <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Prompt Richness</span>
+              <span className="text-sm font-bold text-[--accent]">{completeness.label} — {completeness.score}%</span>
+            </div>
+            <div className="h-1.5 bg-[--border] rounded-full overflow-hidden">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-[--accent-dim] to-[--accent]"
+                animate={{ width: `${completeness.score}%` }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+              />
+            </div>
+          </div>
+
+          {/* Copy controls */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center rounded-xl border border-[--border] overflow-hidden bg-[--bg-surface]">
+              <button onClick={() => setCopyFormat('text')}
+                className={cn("px-3 py-2 text-xs font-bold transition-all", copyFormat === 'text' ? "bg-[--accent] text-[--bg-base]" : "text-[--foreground-dim] hover:text-[--foreground]")}>
+                Text
+              </button>
+              <button onClick={() => setCopyFormat('json')}
+                className={cn("px-3 py-2 text-xs font-bold transition-all flex items-center gap-1", copyFormat === 'json' ? "bg-[--accent] text-[--bg-base]" : "text-[--foreground-dim] hover:text-[--foreground]")}>
+                <Braces size={11} /> JSON
+              </button>
+            </div>
+            <button onClick={handleCopy}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all",
+                copied
+                  ? "bg-[--success]/20 text-[--success] border border-[--success]/30"
+                  : "bg-[--accent] text-[--bg-base] hover:bg-[--accent-hover] shadow-lg shadow-[--accent]/10"
+              )}>
+              {copied ? <><Check size={14} /> Copied!</> : <><Copy size={14} /> Copy {copyFormat === 'json' ? 'JSON' : 'Prompt'}</>}
+            </button>
+          </div>
+
+          {/* Structured prompt */}
+          <div className="rounded-2xl border border-[--border] bg-[--bg-raised] overflow-hidden">
+            <div className="p-4 border-b border-[--border] flex items-center gap-2">
+              <Sparkles size={14} className="text-[--accent]" />
+              <span className="text-xs font-bold tracking-widest uppercase text-[--accent]">Live Prompt</span>
+              <div className="ml-auto flex gap-1.5">
+                <span className="text-xs text-[--foreground-dim] font-mono">{wordCount} words</span>
+              </div>
+            </div>
+            <div className="p-5 space-y-3 max-h-[50vh] overflow-y-auto">
+              {promptSegments.map((seg, i) => (
+                <div key={i} className={cn("pb-3", i < promptSegments.length - 1 && "border-b border-[--border]/40")}>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[--accent] block mb-1">{seg.label}</span>
+                  <p className="text-sm leading-relaxed text-[--foreground]">{seg.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Save preset */}
+          <div className="rounded-2xl border border-[--border] bg-[--bg-raised] p-5 space-y-3">
+            <label className="text-xs font-bold tracking-widest text-[--foreground-dim] uppercase">Save as Preset</label>
+            <div className="flex gap-2">
+              <input type="text" value={presetName}
+                onChange={e => setPresetName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && savePreset()}
+                placeholder="My preset name..."
+                className="flex-1 px-3 py-2.5 text-sm bg-[--bg-inset] border border-[--border] rounded-xl focus:outline-none focus:ring-2 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]" />
+              <button onClick={savePreset} disabled={!presetName.trim()}
+                className={cn(
+                  "flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all",
+                  presetSaved
+                    ? "bg-[--success]/20 text-[--success] border border-[--success]/30"
+                    : presetName.trim()
+                      ? "bg-[--accent] text-[--bg-base] hover:bg-[--accent-hover]"
+                      : "bg-[--bg-surface] text-[--foreground-dim] border border-[--border] cursor-not-allowed"
+                )}>
+                {presetSaved ? <><Check size={13} /> Saved</> : <><Save size={13} /> Save</>}
+              </button>
+            </div>
+          </div>
+
+          <button onClick={() => setUiMode('studio')}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[--border] text-sm font-semibold text-[--foreground-muted] hover:border-[--accent-dim] hover:text-[--accent] transition-all">
+            <LayoutGrid size={15} />
+            Open in Studio mode
+          </button>
+        </div>
+      );
+
+      default: return null;
+    }
+  };
+
+  // ── Wizard Layout ────────────────────────────────────────────────────────
+
+  if (uiMode === 'wizard') {
+    return (
+      <main className="min-h-screen bg-[--bg-base] text-[--foreground] flex flex-col" style={{ fontFamily: SYSTEM_FONT }}>
+        {/* Wizard header */}
+        <header className="sticky top-0 z-30 backdrop-blur-xl bg-[--bg-base]/90 border-b border-[--border]">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+            <div className="flex items-center gap-2 mr-2">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[--accent] to-[--accent-dim] flex items-center justify-center">
+                <Wand2 size={13} className="text-[--bg-base]" strokeWidth={2.5} />
+              </div>
+              <span className="text-[11px] font-bold tracking-[0.2em] text-[--accent] uppercase hidden sm:block">Nano Banana</span>
+            </div>
+
+            {/* Segmented progress */}
+            <div className="flex-1 flex items-center gap-1">
+              {WIZARD_STEPS.map((step, i) => (
+                <button key={step.id}
+                  onClick={() => goToStep(i)}
+                  className={cn(
+                    "h-1.5 rounded-full transition-all",
+                    i < wizardStep ? "bg-[--accent] flex-1" :
+                    i === wizardStep ? "bg-[--accent] flex-[2]" :
+                    "bg-[--border] flex-1"
+                  )} />
+              ))}
+            </div>
+
+            <span className="text-xs font-mono text-[--foreground-dim] shrink-0">{wizardStep + 1}/{totalSteps}</span>
+            <ModeSwitcher compact />
+          </div>
+        </header>
+
+        {/* Wizard content area */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+            <AnimatePresence mode="wait" custom={wizardDirection}>
+              <motion.div
+                key={wizardStep}
+                custom={wizardDirection}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}>
+
+                {/* Step header */}
+                <div className="mb-8">
+                  <div className="flex items-center gap-2 mb-3">
+                    {React.createElement(stepInfo.icon, { size: 18, className: "text-[--accent]" })}
+                    <span className="text-xs font-bold tracking-widest text-[--accent] uppercase">
+                      Step {wizardStep + 1} of {totalSteps}
+                    </span>
+                  </div>
+                  <h1 className="text-3xl sm:text-4xl font-bold text-[--foreground] mb-2 leading-tight">
+                    {stepInfo.title}
+                  </h1>
+                  <p className="text-base text-[--foreground-muted]">{stepInfo.subtitle}</p>
+                </div>
+
+                {/* Step body */}
+                {renderWizardStep()}
+
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Wizard footer nav */}
+        <div className="sticky bottom-0 bg-[--bg-base]/95 backdrop-blur-xl border-t border-[--border]">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+            <button
+              onClick={goBack}
+              disabled={wizardStep === 0}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all",
+                wizardStep === 0
+                  ? "text-[--foreground-dim] cursor-not-allowed"
+                  : "text-[--foreground-muted] hover:text-[--foreground] hover:bg-[--bg-surface] border border-[--border]"
+              )}>
+              <ArrowLeft size={15} />
+              Back
+            </button>
+
+            <div className="flex-1" />
+
+            {getStepIsSkippable(wizardStep) && (
+              <button onClick={goNext}
+                className="text-sm font-medium text-[--foreground-dim] hover:text-[--foreground-muted] transition-colors px-3 py-2.5">
+                Skip
+              </button>
+            )}
+
+            {wizardStep < totalSteps - 1 ? (
+              <button onClick={goNext}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[--accent] text-[--bg-base] text-sm font-bold hover:bg-[--accent-hover] transition-all shadow-lg shadow-[--accent]/20">
+                Next
+                <ArrowRight size={15} />
+              </button>
+            ) : (
+              <button onClick={handleCopy}
+                className={cn(
+                  "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all",
+                  copied
+                    ? "bg-[--success]/20 text-[--success] border border-[--success]/30"
+                    : "bg-[--accent] text-[--bg-base] hover:bg-[--accent-hover] shadow-lg shadow-[--accent]/20"
+                )}>
+                {copied ? <><Check size={15} /> Copied!</> : <><Copy size={15} /> Copy Prompt</>}
+              </button>
+            )}
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // STUDIO MODE
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  const visibleSections = SECTIONS.filter(s => {
+    if (s.id === 'screen-fx' && !isScreenObject) return false;
+    if (s.id === 'object-details' && !hasObjectDetails && !isPrintObject) return false;
+    if ((s.id === 'surface' || s.id === 'setting') && config.infiniteBackground) return false;
+    return true;
+  });
+
+  const StudioSidebar = () => (
     <>
       {/* Logo */}
-      <div className="px-7 pt-6 pb-5 border-b border-[--border] shrink-0">
+      <div className="px-6 pt-5 pb-4 border-b border-[--border] shrink-0">
         <div className="flex items-center gap-3 mb-1">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[--accent] to-[--accent-dim] flex items-center justify-center">
             <Wand2 size={16} className="text-[--bg-base]" strokeWidth={2.5} />
           </div>
           <div>
-            <span className="text-[11px] font-bold tracking-[0.25em] text-[--accent] uppercase block leading-none mb-0.5">
-              Nano Banana Pro
-            </span>
-            <h1 className="text-lg font-serif text-[--foreground] leading-none">Mockup Studio</h1>
+            <span className="text-[10px] font-bold tracking-[0.25em] text-[--accent] uppercase block leading-none mb-0.5">Nano Banana Pro</span>
+            <h1 className="text-base font-bold text-[--foreground] leading-none">Mockup Studio</h1>
           </div>
-          {/* Mobile close button */}
-          <button
-            className="ml-auto md:hidden text-[--foreground-dim] hover:text-[--foreground] p-1"
-            onClick={() => setSidebarOpen(false)}>
+          <button className="ml-auto md:hidden text-[--foreground-dim] hover:text-[--foreground] p-1" onClick={() => setSidebarOpen(false)}>
             <X size={18} />
           </button>
         </div>
       </div>
 
-      {/* Presets + Prompt quality */}
+      {/* Preset bar + quality */}
       <div className="border-b border-[--border] shrink-0">
-        {/* Preset bar */}
-        <div className="px-7 py-2.5 flex items-center gap-2">
+        <div className="px-6 py-2.5 flex items-center gap-2">
           <button onClick={() => setShowPresetPanel(!showPresetPanel)}
             className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-semibold transition-all",
+              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all",
               showPresetPanel
                 ? "bg-[--accent-subtle] text-[--accent] border border-[--border-accent]"
                 : "text-[--foreground-muted] hover:text-[--foreground] hover:bg-[--bg-surface] border border-transparent"
@@ -886,13 +1710,17 @@ export default function MockupGenerator() {
             )}
           </button>
           <div className="flex-1" />
+          <button onClick={() => { setUiMode('wizard'); setWizardStep(0); }}
+            className="text-[11px] font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1">
+            <Wand2 size={9} /> Wizard
+          </button>
           <button onClick={() => setConfig(DEFAULT_CONFIG)}
             className="text-[11px] font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1">
-            <RotateCcw size={9} /> Reset all
+            <RotateCcw size={9} /> Reset
           </button>
         </div>
 
-        {/* Preset panel (expandable) */}
+        {/* Preset panel */}
         <AnimatePresence>
           {showPresetPanel && (
             <motion.div
@@ -901,8 +1729,7 @@ export default function MockupGenerator() {
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
               className="overflow-hidden">
-              <div className="px-7 pb-3 space-y-2.5">
-                {/* Save new preset */}
+              <div className="px-6 pb-3 space-y-2.5">
                 <div className="flex gap-1.5">
                   <input type="text" value={presetName}
                     onChange={e => setPresetName(e.target.value)}
@@ -911,26 +1738,21 @@ export default function MockupGenerator() {
                     className="flex-1 px-2.5 py-1.5 text-[13px] bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]" />
                   <button onClick={savePreset} disabled={!presetName.trim()}
                     className={cn(
-                      "flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all",
-                      presetSaved
-                        ? "bg-[--success]/20 text-[--success] border border-[--success]/30"
-                        : presetName.trim()
-                          ? "bg-[--accent] text-[--bg-base] hover:bg-[--accent-hover]"
+                      "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                      presetSaved ? "bg-[--success]/20 text-[--success] border border-[--success]/30"
+                        : presetName.trim() ? "bg-[--accent] text-[--bg-base] hover:bg-[--accent-hover]"
                           : "bg-[--bg-surface] text-[--foreground-dim] border border-[--border] cursor-not-allowed"
                     )}>
                     {presetSaved ? <><Check size={11} /> Saved</> : <><Save size={11} /> Save</>}
                   </button>
                 </div>
 
-                {/* Built-in presets */}
                 <div>
-                  <p className="text-[11px] font-bold text-[--foreground-dim] uppercase tracking-widest mb-1.5">Built-in</p>
-                  <div className="space-y-1 max-h-[140px] overflow-y-auto">
+                  <p className="text-[10px] font-bold text-[--foreground-dim] uppercase tracking-widest mb-1.5">Built-in</p>
+                  <div className="space-y-1 max-h-[130px] overflow-y-auto">
                     {BUILT_IN_PRESETS.map(preset => (
-                      <div key={preset.name}
-                        className="flex items-center gap-2 px-2.5 py-2 rounded-lg border border-[--border] bg-[--bg-inset] hover:border-[--accent-dim] transition-colors">
-                        <button onClick={() => loadPreset(preset)}
-                          className="flex-1 text-left text-[12px] font-medium text-[--foreground-muted] hover:text-[--foreground] transition-colors truncate">
+                      <div key={preset.name} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-[--border] bg-[--bg-inset] hover:border-[--accent-dim] transition-colors">
+                        <button onClick={() => loadPreset(preset)} className="flex-1 text-left text-[12px] font-medium text-[--foreground-muted] hover:text-[--foreground] transition-colors truncate">
                           {preset.name}
                         </button>
                         <span className="text-[10px] text-[--accent] font-bold border border-[--border-accent] rounded px-1 shrink-0">Built-in</span>
@@ -939,23 +1761,16 @@ export default function MockupGenerator() {
                   </div>
                 </div>
 
-                {/* User presets */}
                 {presets.length > 0 && (
                   <div>
-                    <p className="text-[11px] font-bold text-[--foreground-dim] uppercase tracking-widest mb-1.5">My Presets</p>
+                    <p className="text-[10px] font-bold text-[--foreground-dim] uppercase tracking-widest mb-1.5">My Presets</p>
                     <div className="space-y-1 max-h-[120px] overflow-y-auto">
                       {presets.map(preset => (
-                        <div key={preset.name}
-                          className="flex items-center gap-2 px-2.5 py-2 rounded-lg border border-[--border] bg-[--bg-surface] hover:border-[--border-accent] transition-colors group">
-                          <button onClick={() => loadPreset(preset)}
-                            className="flex-1 text-left text-[12px] font-medium text-[--foreground-muted] hover:text-[--foreground] transition-colors truncate">
+                        <div key={preset.name} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-[--border] bg-[--bg-surface] hover:border-[--border-accent] transition-colors group">
+                          <button onClick={() => loadPreset(preset)} className="flex-1 text-left text-[12px] font-medium text-[--foreground-muted] hover:text-[--foreground] transition-colors truncate">
                             {preset.name}
                           </button>
-                          <span className="text-[10px] text-[--foreground-dim] font-mono shrink-0">
-                            {new Date(preset.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                          </span>
-                          <button onClick={() => deletePreset(preset.name)}
-                            className="opacity-0 group-hover:opacity-100 text-[--foreground-dim] hover:text-[--danger] transition-all p-0.5">
+                          <button onClick={() => deletePreset(preset.name)} className="opacity-0 group-hover:opacity-100 text-[--foreground-dim] hover:text-[--danger] transition-all p-0.5">
                             <Trash2 size={11} />
                           </button>
                         </div>
@@ -963,21 +1778,18 @@ export default function MockupGenerator() {
                     </div>
                   </div>
                 )}
-
-                {presets.length === 0 && (
-                  <p className="text-[12px] text-[--foreground-dim] py-1 text-center">No saved presets yet</p>
-                )}
+                {presets.length === 0 && <p className="text-xs text-[--foreground-dim] py-1 text-center">No saved presets yet</p>}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Prompt quality indicator */}
-        <div className="px-7 py-2.5 flex items-center gap-3">
+        {/* Prompt quality */}
+        <div className="px-6 py-2.5 flex items-center gap-3">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">Prompt richness</span>
-              <span className="text-[12px] font-bold text-[--accent]">{completeness.label}</span>
+              <span className="text-[10px] font-bold tracking-widest text-[--foreground-dim] uppercase">Prompt richness</span>
+              <span className="text-xs font-bold text-[--accent]">{completeness.label}</span>
             </div>
             <div className="h-1 bg-[--border] rounded-full overflow-hidden">
               <motion.div
@@ -988,7 +1800,7 @@ export default function MockupGenerator() {
               />
             </div>
           </div>
-          <span className="text-[18px] font-bold font-mono text-[--accent] tabular-nums">{completeness.score}</span>
+          <span className="text-lg font-bold font-mono text-[--accent] tabular-nums">{completeness.score}</span>
         </div>
       </div>
 
@@ -1027,35 +1839,24 @@ export default function MockupGenerator() {
               <div key={section.id} className="border-b border-[--border]">
                 <button onClick={() => toggleSection(section.id)}
                   className={cn(
-                    "w-full flex items-center justify-between px-7 py-3 transition-colors",
+                    "w-full flex items-center justify-between px-6 py-3 transition-colors",
                     isModified && !isOpen ? "bg-[--accent-subtle]/50" : "",
                     isOpen ? "bg-[--accent-subtle]" : "hover:bg-[--bg-surface-hover]"
                   )}>
                   <div className="flex items-center gap-2.5">
                     {isModified ? (
-                      <div className="w-1.5 h-1.5 rounded-full bg-[--accent] shrink-0 shadow-[0_0_6px_rgba(196,168,130,0.5)]" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-[--accent] shrink-0 shadow-[0_0_6px_rgba(232,200,64,0.5)]" />
                     ) : (
                       <div className="w-1.5 h-1.5 rounded-full bg-transparent shrink-0" />
                     )}
-                    <Icon size={14} className={cn(
-                      isModified ? "text-[--accent]" : isOpen ? "text-[--accent]" : "text-[--foreground-dim]"
-                    )} strokeWidth={2} />
-                    <span className={cn(
-                      "text-[13px] font-semibold tracking-wide uppercase",
-                      isModified ? "text-[--accent]" : isOpen ? "text-[--accent]" : "text-[--foreground-muted]"
-                    )}>
+                    <Icon size={13} className={cn(isModified ? "text-[--accent]" : isOpen ? "text-[--accent]" : "text-[--foreground-dim]")} strokeWidth={2} />
+                    <span className={cn("text-[12px] font-semibold tracking-wide uppercase", isModified ? "text-[--accent]" : isOpen ? "text-[--accent]" : "text-[--foreground-muted]")}>
                       {section.label}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={cn(
-                      "text-[12px] font-medium truncate max-w-[100px]",
-                      isModified ? "text-[--accent-dim]" : "text-[--foreground-dim]"
-                    )}>{summary}</span>
-                    <ChevronDown size={12} className={cn(
-                      "text-[--foreground-dim] transition-transform duration-200",
-                      isOpen && "rotate-180"
-                    )} />
+                    <span className={cn("text-[11px] font-medium truncate max-w-[90px]", isModified ? "text-[--accent-dim]" : "text-[--foreground-dim]")}>{summary}</span>
+                    <ChevronDown size={11} className={cn("text-[--foreground-dim] transition-transform duration-200", isOpen && "rotate-180")} />
                   </div>
                 </button>
 
@@ -1067,7 +1868,7 @@ export default function MockupGenerator() {
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden">
-                      <div className="px-7 pb-4 pt-1">
+                      <div className="px-6 pb-5 pt-2 space-y-4">
 
                         {/* ── Image Ratio ── */}
                         {section.id === 'ratio' && (
@@ -1077,18 +1878,13 @@ export default function MockupGenerator() {
                               const isActive = config.imageRatio === r.id;
                               return (
                                 <button key={r.id}
-                                  onClick={() => setConfig({ ...config, imageRatio: r.id as ImageRatio })}
+                                  onClick={() => setConfig(prev => ({ ...prev, imageRatio: r.id as ImageRatio }))}
                                   className={cn(
-                                    "flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-lg border transition-all",
-                                    isActive
-                                      ? "border-[--accent] bg-[--accent] text-[--bg-base] font-semibold"
-                                      : "border-[--border] bg-[--bg-surface] text-[--foreground-muted] hover:border-[--border-accent]"
+                                    "flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-xl border transition-all",
+                                    isActive ? "border-[--accent] bg-[--accent] text-[--bg-base]" : "border-[--border] bg-[--bg-surface] text-[--foreground-muted] hover:border-[--border-accent]"
                                   )}>
                                   <div className="flex items-center justify-center w-8 h-8">
-                                    <div className={cn(
-                                      "border-2 rounded-sm",
-                                      isActive ? "border-[--accent]" : "border-[--foreground-dim]"
-                                    )} style={{
+                                    <div className={cn("border-2 rounded-sm", isActive ? "border-[--bg-base]" : "border-[--foreground-dim]")} style={{
                                       width: `${Math.min(24, (rd.w / Math.max(rd.w, rd.h)) * 24)}px`,
                                       height: `${Math.min(24, (rd.h / Math.max(rd.w, rd.h)) * 24)}px`,
                                     }} />
@@ -1103,35 +1899,26 @@ export default function MockupGenerator() {
                         {/* ── Object ── */}
                         {section.id === 'object' && (
                           <div className="space-y-3">
-                            {/* Search input */}
-                            <div className="relative" onClick={e => e.stopPropagation()}>
+                            <div className="relative">
                               <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[--foreground-dim] pointer-events-none" />
-                              <input
-                                id="object-search-input"
-                                type="text"
-                                value={objectSearch}
-                                onChange={e => { e.stopPropagation(); setObjectSearch(e.target.value); }}
-                                onKeyDown={e => e.stopPropagation()}
+                              <input type="text" value={objectSearch}
+                                onChange={e => setObjectSearch(e.target.value)}
                                 placeholder="Search objects..."
                                 autoComplete="off"
-                                className="w-full pl-8 pr-8 py-2 text-[13px] bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]"
-                              />
+                                className="w-full pl-8 pr-8 py-2 text-[13px] bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]" />
                               {objectSearch && (
-                                <button onClick={e => { e.stopPropagation(); setObjectSearch(''); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[--foreground-dim] hover:text-[--foreground]">
+                                <button onClick={() => setObjectSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[--foreground-dim] hover:text-[--foreground]">
                                   <X size={12} />
                                 </button>
                               )}
                             </div>
-                            {/* Category tabs */}
                             <div className="flex gap-1 overflow-x-auto pb-1">
                               {OBJECT_CATEGORIES.map(cat => (
                                 <button key={cat.id}
                                   onClick={() => setObjectCategoryFilter(cat.id)}
                                   className={cn(
                                     "px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider whitespace-nowrap transition-all",
-                                    objectCategoryFilter === cat.id
-                                      ? "bg-[--accent] text-[--bg-base]"
-                                      : "text-[--foreground-dim] hover:text-[--foreground-muted] hover:bg-[--bg-surface]"
+                                    objectCategoryFilter === cat.id ? "bg-[--accent] text-[--bg-base]" : "text-[--foreground-dim] hover:text-[--foreground-muted] hover:bg-[--bg-surface]"
                                   )}>
                                   {cat.label}
                                 </button>
@@ -1146,12 +1933,10 @@ export default function MockupGenerator() {
                                   const isActive = config.object === obj.id;
                                   return (
                                     <button key={obj.id}
-                                      onClick={() => setConfig({ ...config, object: obj.id as ObjectType, objectDetails: getObjectDefaults(obj.id as ObjectType) })}
+                                      onClick={() => setConfig(prev => ({ ...prev, object: obj.id as ObjectType, objectDetails: getObjectDefaults(obj.id as ObjectType) }))}
                                       className={cn(
                                         "flex items-center gap-2 px-2.5 py-2 rounded-lg border text-left transition-all text-[12px] font-medium",
-                                        isActive
-                                          ? "border-[--accent] bg-[--accent] text-[--bg-base] font-semibold"
-                                          : "border-[--border] hover:border-[--border-accent] bg-[--bg-surface] text-[--foreground-muted] hover:text-[--foreground]"
+                                        isActive ? "border-[--accent] bg-[--accent] text-[--bg-base] font-semibold" : "border-[--border] hover:border-[--border-accent] bg-[--bg-surface] text-[--foreground-muted] hover:text-[--foreground]"
                                       )}>
                                       <ObjIcon size={12} strokeWidth={2} />
                                       <span className="truncate">{obj.label}</span>
@@ -1163,40 +1948,49 @@ export default function MockupGenerator() {
                           </div>
                         )}
 
-                        {/* ── Object Details ── */}
+                        {/* ── Object Details (+ Material for print) ── */}
                         {section.id === 'object-details' && (
                           <div className="space-y-4">
                             {(OBJECT_OPTIONS[config.object] ?? []).map(opt => (
                               <div key={opt.key} className="space-y-1.5">
-                                <label className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">{opt.label}</label>
+                                <label className="text-[10px] font-bold tracking-widest text-[--foreground-dim] uppercase">{opt.label}</label>
                                 <div className={cn("grid gap-1.5", opt.choices.length <= 3 ? "grid-cols-3" : "grid-cols-2")}>
                                   {opt.choices.map(choice => (
                                     <TogglePill key={choice.id} label={choice.label}
                                       active={(config.objectDetails[opt.key] ?? opt.default) === choice.id}
-                                      onClick={() => setConfig(prev => ({
-                                        ...prev, objectDetails: { ...prev.objectDetails, [opt.key]: choice.id },
-                                      }))} />
+                                      onClick={() => setConfig(prev => ({ ...prev, objectDetails: { ...prev.objectDetails, [opt.key]: choice.id } }))} />
                                   ))}
                                 </div>
                               </div>
                             ))}
+                            {isPrintObject && (
+                              <div className="space-y-1.5 pt-2 border-t border-[--border]">
+                                <label className="text-[10px] font-bold tracking-widest text-[--foreground-dim] uppercase">Material Finish</label>
+                                <div className="grid grid-cols-2 gap-1.5">
+                                  {MATERIALS.map(mat => (
+                                    <TogglePill key={mat.id} label={mat.label} active={config.material === mat.id}
+                                      onClick={() => setConfig(prev => ({ ...prev, material: mat.id as MaterialType }))} />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
 
                         {/* ── Asset Input ── */}
                         {section.id === 'asset-input' && (
-                          <div className="space-y-3">
+                          <div className="space-y-2">
                             <div className="grid grid-cols-1 gap-1.5">
                               {ASSET_INPUTS.map(ai => (
                                 <TogglePill key={ai.id} label={ai.label} active={config.assetInput === ai.id}
-                                  onClick={() => setConfig({ ...config, assetInput: ai.id as AssetInputType })} />
+                                  onClick={() => setConfig(prev => ({ ...prev, assetInput: ai.id as AssetInputType }))} />
                               ))}
                             </div>
                             {config.assetInput === 'design-custom' && (
                               <div className="space-y-1.5">
-                                <label className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">Dimensions</label>
+                                <label className="text-[10px] font-bold tracking-widest text-[--foreground-dim] uppercase">Dimensions</label>
                                 <input type="text" value={config.assetDimensions}
-                                  onChange={e => setConfig({ ...config, assetDimensions: e.target.value })}
+                                  onChange={e => setConfig(prev => ({ ...prev, assetDimensions: e.target.value }))}
                                   placeholder="e.g. 1920x1080px, A4, 210x297mm"
                                   className="w-full p-2.5 text-[13px] bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]" />
                               </div>
@@ -1210,15 +2004,15 @@ export default function MockupGenerator() {
                             <div className="grid grid-cols-2 gap-1.5">
                               {CAMERAS.map(cam => (
                                 <TogglePill key={cam.id} label={cam.label} active={config.camera === cam.id}
-                                  onClick={() => setConfig({
-                                    ...config, camera: cam.id as CameraAngle,
-                                    customAngle: cam.id === 'custom' ? (config.customAngle || { pitch: 30, yaw: 30 }) : config.customAngle,
-                                  })} />
+                                  onClick={() => setConfig(prev => ({
+                                    ...prev, camera: cam.id as CameraAngle,
+                                    customAngle: cam.id === 'custom' ? (prev.customAngle || { pitch: 30, yaw: 30 }) : prev.customAngle,
+                                  }))} />
                               ))}
                             </div>
                             {config.camera === 'custom' && (
                               <AngleWidget angle={config.customAngle || { pitch: 30, yaw: 30 }}
-                                onChange={(a) => setConfig({ ...config, customAngle: a })} />
+                                onChange={a => setConfig(prev => ({ ...prev, customAngle: a }))} />
                             )}
                           </div>
                         )}
@@ -1228,7 +2022,7 @@ export default function MockupGenerator() {
                           <div className="grid grid-cols-2 gap-1.5">
                             {SURFACES.map(srf => (
                               <TogglePill key={srf.id} label={srf.label} active={config.surface === srf.id}
-                                onClick={() => setConfig({ ...config, surface: srf.id as SurfaceType })} />
+                                onClick={() => setConfig(prev => ({ ...prev, surface: srf.id as SurfaceType }))} />
                             ))}
                           </div>
                         )}
@@ -1238,7 +2032,7 @@ export default function MockupGenerator() {
                           <div className="grid grid-cols-2 gap-1.5">
                             {SETTINGS.map(s => (
                               <TogglePill key={s.id} label={s.label} active={config.setting === s.id}
-                                onClick={() => setConfig({ ...config, setting: s.id as SettingType })} />
+                                onClick={() => setConfig(prev => ({ ...prev, setting: s.id as SettingType }))} />
                             ))}
                           </div>
                         )}
@@ -1249,67 +2043,23 @@ export default function MockupGenerator() {
                             <div className="grid grid-cols-2 gap-1.5">
                               {LIGHTINGS.map(lt => (
                                 <TogglePill key={lt.id} label={lt.label} active={config.lighting === lt.id}
-                                  onClick={() => setConfig({ ...config, lighting: lt.id as LightingType })} />
+                                  onClick={() => setConfig(prev => ({ ...prev, lighting: lt.id as LightingType }))} />
                               ))}
                             </div>
                             <div className="space-y-2 pt-1">
                               <div className="flex justify-between items-center">
-                                <label className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">Intensity</label>
+                                <label className="text-[10px] font-bold tracking-widest text-[--foreground-dim] uppercase">Intensity</label>
                                 <span className="text-[13px] font-mono font-bold text-[--accent]">{config.intensity}%</span>
                               </div>
                               <input type="range" min="0" max="100" value={config.intensity}
-                                onChange={e => setConfig({ ...config, intensity: parseInt(e.target.value) })}
+                                onChange={e => setConfig(prev => ({ ...prev, intensity: parseInt(e.target.value) }))}
                                 className="w-full cursor-pointer" />
                             </div>
                           </div>
                         )}
 
                         {/* ── Colors ── */}
-                        {section.id === 'colors' && (
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                              {config.swatchColors.map((color, i) => (
-                                <div key={i} className="relative group">
-                                  <label className="block w-10 h-10 rounded-lg border-2 border-[--border] cursor-pointer overflow-hidden hover:border-[--accent-dim] transition-colors"
-                                    style={{ backgroundColor: color }}>
-                                    <input type="color" value={color}
-                                      onChange={e => updateSwatchColor(i, e.target.value)}
-                                      className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
-                                  </label>
-                                  <button onClick={() => removeSwatchColor(i)}
-                                    className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[--danger] text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <X size={8} strokeWidth={3} />
-                                  </button>
-                                  <span className="block text-[9px] font-mono text-[--foreground-dim] text-center mt-1 leading-none">{color}</span>
-                                </div>
-                              ))}
-                              {config.swatchColors.length < 5 && (
-                                <label className="relative w-10 h-10 rounded-lg border-2 border-dashed border-[--border] cursor-pointer flex items-center justify-center hover:border-[--accent-dim] transition-colors">
-                                  <Plus size={14} className="text-[--foreground-dim]" />
-                                  <input type="color" value="#E8C840"
-                                    onChange={e => addSwatchColor(e.target.value)}
-                                    className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
-                                </label>
-                              )}
-                            </div>
-                            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageExtract} className="hidden" />
-                            <button onClick={() => fileInputRef.current?.click()} disabled={extracting}
-                              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-[--border] text-[13px] font-medium transition-all bg-[--bg-surface] text-[--foreground-muted] hover:border-[--border-accent] hover:text-[--foreground]">
-                              {extracting ? (
-                                <><div className="w-3 h-3 border-2 border-[--accent]/30 border-t-[--accent] rounded-full animate-spin" /><span>Extracting...</span></>
-                              ) : (
-                                <><ImagePlus size={14} /><span>Extract from Image</span></>
-                              )}
-                            </button>
-                            <p className="text-[11px] text-[--foreground-dim]">100% local — never uploaded.</p>
-                            {config.swatchColors.length > 0 && (
-                              <button onClick={() => setConfig({ ...config, swatchColors: [] })}
-                                className="text-[12px] font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1">
-                                <RotateCcw size={10} /> Clear colors
-                              </button>
-                            )}
-                          </div>
-                        )}
+                        {section.id === 'colors' && <ColorSwatchesUI />}
 
                         {/* ── Props ── */}
                         {section.id === 'props' && (
@@ -1322,7 +2072,7 @@ export default function MockupGenerator() {
                               ))}
                             </div>
                             {config.props.length > 0 && (
-                              <button onClick={() => setConfig({ ...config, props: [] })}
+                              <button onClick={() => setConfig(prev => ({ ...prev, props: [] }))}
                                 className="text-[12px] font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1 pt-1">
                                 <RotateCcw size={10} /> Clear all
                               </button>
@@ -1335,7 +2085,7 @@ export default function MockupGenerator() {
                           <div className="grid grid-cols-2 gap-1.5">
                             {HANDS.map(h => (
                               <TogglePill key={h.id} label={h.label} active={config.hand === h.id}
-                                onClick={() => setConfig({ ...config, hand: h.id as HandMode })} />
+                                onClick={() => setConfig(prev => ({ ...prev, hand: h.id as HandMode }))} />
                             ))}
                           </div>
                         )}
@@ -1364,7 +2114,7 @@ export default function MockupGenerator() {
                               ))}
                             </div>
                             {config.imperfections.length > 0 && (
-                              <button onClick={() => setConfig({ ...config, imperfections: [] })}
+                              <button onClick={() => setConfig(prev => ({ ...prev, imperfections: [] }))}
                                 className="text-[12px] font-bold text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1 pt-1">
                                 <RotateCcw size={10} /> Clear all
                               </button>
@@ -1375,7 +2125,7 @@ export default function MockupGenerator() {
                         {/* ── Infinite Background ── */}
                         {section.id === 'infinite-bg' && (
                           <div className="space-y-3">
-                            <button onClick={() => setConfig({ ...config, infiniteBackground: !config.infiniteBackground })}
+                            <button onClick={() => setConfig(prev => ({ ...prev, infiniteBackground: !prev.infiniteBackground }))}
                               className={cn(
                                 "w-full flex items-center justify-between px-3 py-2.5 rounded-lg border transition-all text-[13px] font-medium",
                                 config.infiniteBackground
@@ -1383,42 +2133,34 @@ export default function MockupGenerator() {
                                   : "border-[--border] hover:border-[--border-accent] bg-[--bg-surface] text-[--foreground-muted]"
                               )}>
                               <span>{config.infiniteBackground ? 'Infinite BG: ON' : 'Infinite BG: OFF'}</span>
-                              <div className={cn("w-8 h-4 rounded-full transition-colors relative",
-                                config.infiniteBackground ? "bg-[--accent]" : "bg-[--border-light]")}>
-                                <div className={cn(
-                                  "absolute top-0.5 w-3 h-3 rounded-full bg-[--foreground] shadow-sm transition-transform",
-                                  config.infiniteBackground ? "translate-x-4" : "translate-x-0.5"
-                                )} />
+                              <div className={cn("w-8 h-4 rounded-full transition-colors relative", config.infiniteBackground ? "bg-[--bg-base]/30" : "bg-[--border-light]")}>
+                                <div className={cn("absolute top-0.5 w-3 h-3 rounded-full shadow-sm transition-transform", config.infiniteBackground ? "translate-x-4 bg-[--bg-base]" : "translate-x-0.5 bg-[--foreground]")} />
                               </div>
                             </button>
                             {config.infiniteBackground && (
                               <div className="space-y-2.5">
-                                <label className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">Background Color</label>
+                                <label className="text-[10px] font-bold tracking-widest text-[--foreground-dim] uppercase">Background Color</label>
                                 <div className="flex items-center gap-3">
                                   <input type="color" value={config.infiniteBgColor}
-                                    onChange={e => setConfig({ ...config, infiniteBgColor: e.target.value })}
+                                    onChange={e => setConfig(prev => ({ ...prev, infiniteBgColor: e.target.value }))}
                                     className="w-10 h-10 rounded-lg border border-[--border] cursor-pointer p-0.5 bg-transparent" />
                                   <input type="text" value={config.infiniteBgColor}
-                                    onChange={e => setConfig({ ...config, infiniteBgColor: e.target.value })}
-                                    className="flex-1 p-2.5 text-[13px] font-mono bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]" />
+                                    onChange={e => setConfig(prev => ({ ...prev, infiniteBgColor: e.target.value }))}
+                                    className="flex-1 p-2.5 text-[13px] font-mono bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground]" />
                                 </div>
                                 {config.swatchColors.length > 0 && (
                                   <div className="space-y-1.5">
-                                    <label className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">From your palette</label>
+                                    <label className="text-[10px] font-bold tracking-widest text-[--foreground-dim] uppercase">From your palette</label>
                                     <div className="flex items-center gap-2">
                                       {config.swatchColors.map((color, i) => (
                                         <button key={i}
-                                          onClick={() => setConfig({ ...config, infiniteBgColor: color })}
-                                          className={cn(
-                                            "w-8 h-8 rounded-lg border-2 transition-all hover:scale-110",
-                                            config.infiniteBgColor === color ? "border-[--accent] ring-1 ring-[--accent]" : "border-[--border]"
-                                          )}
+                                          onClick={() => setConfig(prev => ({ ...prev, infiniteBgColor: color }))}
+                                          className={cn("w-8 h-8 rounded-lg border-2 transition-all hover:scale-110", config.infiniteBgColor === color ? "border-[--accent] ring-1 ring-[--accent]" : "border-[--border]")}
                                           style={{ backgroundColor: color }} title={color} />
                                       ))}
                                     </div>
                                   </div>
                                 )}
-                                <p className="text-[11px] text-[--foreground-dim]">Replaces Surface & Setting with a seamless infinite backdrop.</p>
                               </div>
                             )}
                           </div>
@@ -1428,27 +2170,18 @@ export default function MockupGenerator() {
                         {section.id === 'brand' && (
                           <div className="space-y-3">
                             <div className="space-y-1.5">
-                              <label className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">Asset Description</label>
+                              <label className="text-[10px] font-bold tracking-widest text-[--foreground-dim] uppercase">Asset Description</label>
                               <textarea value={config.assetDescription}
-                                onChange={e => setConfig({ ...config, assetDescription: e.target.value })}
+                                onChange={e => setConfig(prev => ({ ...prev, assetDescription: e.target.value }))}
                                 placeholder="e.g. A minimalist serif logo for a boutique hotel, embossed in dark olive green..."
                                 className="w-full h-20 p-2.5 text-[13px] bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] resize-none text-[--foreground] placeholder:text-[--foreground-dim]" />
                             </div>
                             <div className="space-y-1.5">
-                              <label className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">Color Palette</label>
+                              <label className="text-[10px] font-bold tracking-widest text-[--foreground-dim] uppercase">Color Palette</label>
                               <input type="text" value={config.colorPalette}
-                                onChange={e => setConfig({ ...config, colorPalette: e.target.value })}
+                                onChange={e => setConfig(prev => ({ ...prev, colorPalette: e.target.value }))}
                                 className="w-full p-2.5 text-[13px] bg-[--bg-inset] border border-[--border] rounded-lg focus:outline-none focus:ring-1 focus:ring-[--accent-dim] text-[--foreground] placeholder:text-[--foreground-dim]"
                                 placeholder="Warm neutrals, off-whites..." />
-                            </div>
-                            <div className="space-y-1.5">
-                              <label className="text-[11px] font-bold tracking-widest text-[--foreground-dim] uppercase">Material Finish</label>
-                              <div className="grid grid-cols-2 gap-1.5">
-                                {MATERIALS.map(mat => (
-                                  <TogglePill key={mat.id} label={mat.label} active={config.material === mat.id}
-                                    onClick={() => setConfig({ ...config, material: mat.id as MaterialType })} />
-                                ))}
-                              </div>
                             </div>
                           </div>
                         )}
@@ -1466,11 +2199,9 @@ export default function MockupGenerator() {
   );
 
   return (
-    <main
-      className="flex min-h-screen bg-[--bg-base] text-[--foreground]"
-      style={{ fontFamily: SYSTEM_FONT }}>
+    <main className="flex min-h-screen bg-[--bg-base] text-[--foreground]" style={{ fontFamily: SYSTEM_FONT }}>
 
-      {/* ── Mobile backdrop ── */}
+      {/* Mobile backdrop */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
@@ -1483,27 +2214,22 @@ export default function MockupGenerator() {
         )}
       </AnimatePresence>
 
-      {/* ── Sidebar (desktop: sticky; mobile: slide-out drawer) ── */}
+      {/* Sidebar */}
       <aside className={cn(
-        "w-[360px] min-w-[360px] border-r border-[--border] bg-[--bg-raised] flex flex-col h-screen",
-        // Desktop
+        "w-[340px] min-w-[340px] border-r border-[--border] bg-[--bg-raised] flex flex-col h-screen",
         "md:sticky md:top-0",
-        // Mobile
         "fixed top-0 left-0 z-40 transition-transform duration-300 md:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <SidebarContent />
+        <StudioSidebar />
       </aside>
 
-      {/* ── Canvas Area ── */}
+      {/* Canvas */}
       <section className="flex-1 flex flex-col min-h-screen relative">
         {/* Top bar */}
         <header className="sticky top-0 z-20 backdrop-blur-xl bg-[--bg-base]/80 border-b border-[--border] px-4 md:px-8 py-3">
           <div className="flex items-center justify-between gap-3">
-            {/* Mobile hamburger */}
-            <button
-              className="md:hidden text-[--foreground-muted] hover:text-[--foreground] p-1 shrink-0"
-              onClick={() => setSidebarOpen(true)}>
+            <button className="md:hidden text-[--foreground-muted] hover:text-[--foreground] p-1 shrink-0" onClick={() => setSidebarOpen(true)}>
               <Menu size={20} />
             </button>
 
@@ -1523,26 +2249,15 @@ export default function MockupGenerator() {
                 <span className="font-mono">{wordCount} words</span>
               </div>
 
-              {/* Copy format toggle */}
+              <ModeSwitcher compact />
+
               <div className="flex items-center rounded-lg border border-[--border] overflow-hidden bg-[--bg-surface]">
-                <button
-                  onClick={() => setCopyFormat('text')}
-                  className={cn(
-                    "px-2.5 py-1.5 text-[11px] font-bold transition-all flex items-center gap-1",
-                    copyFormat === 'text'
-                      ? "bg-[--accent] text-[--bg-base]"
-                      : "text-[--foreground-dim] hover:text-[--foreground]"
-                  )}>
+                <button onClick={() => setCopyFormat('text')}
+                  className={cn("px-2.5 py-1.5 text-[11px] font-bold transition-all", copyFormat === 'text' ? "bg-[--accent] text-[--bg-base]" : "text-[--foreground-dim] hover:text-[--foreground]")}>
                   Text
                 </button>
-                <button
-                  onClick={() => setCopyFormat('json')}
-                  className={cn(
-                    "px-2.5 py-1.5 text-[11px] font-bold transition-all flex items-center gap-1",
-                    copyFormat === 'json'
-                      ? "bg-[--accent] text-[--bg-base]"
-                      : "text-[--foreground-dim] hover:text-[--foreground]"
-                  )}>
+                <button onClick={() => setCopyFormat('json')}
+                  className={cn("px-2.5 py-1.5 text-[11px] font-bold transition-all flex items-center gap-1", copyFormat === 'json' ? "bg-[--accent] text-[--bg-base]" : "text-[--foreground-dim] hover:text-[--foreground]")}>
                   <Braces size={11} /> JSON
                 </button>
               </div>
@@ -1563,11 +2278,10 @@ export default function MockupGenerator() {
         {/* Canvas content */}
         <div className="flex-1 flex items-start justify-center p-4 md:p-8 overflow-y-auto">
           <div className="w-full max-w-4xl">
-            {/* Config summary pills — clickable to reset */}
+            {/* Config summary pills */}
             <div className="flex flex-wrap gap-1.5 mb-6">
               {summaryPills.map(pill => (
-                <button
-                  key={pill.k}
+                <button key={pill.k}
                   onClick={() => resetPillValue(pill.k)}
                   className="group flex items-center gap-1.5 px-2.5 py-1 bg-[--bg-surface] border border-[--border] rounded-full hover:border-[--accent-dim] hover:bg-[--accent-subtle] transition-all">
                   <span className="text-[10px] font-bold text-[--foreground-dim] uppercase">{pill.k}</span>
@@ -1575,7 +2289,6 @@ export default function MockupGenerator() {
                   <X size={9} className="text-[--foreground-dim] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
               ))}
-              {/* Inline swatch dots */}
               {config.swatchColors.length > 0 && (
                 <button
                   onClick={() => setConfig(prev => ({ ...prev, swatchColors: [] }))}
@@ -1588,43 +2301,7 @@ export default function MockupGenerator() {
               )}
             </div>
 
-            {/* Aspect ratio frame with structured prompt */}
-            <div className="relative">
-              <div
-                className="relative bg-[--bg-raised] rounded-2xl border border-[--border] overflow-hidden shadow-2xl shadow-black/20"
-                style={{
-                  aspectRatio: `${ratioData.w} / ${ratioData.h}`,
-                  maxHeight: '80vh',
-                  minHeight: '360px',
-                }}>
-                {/* Subtle corner ratio indicator */}
-                <div className="absolute top-4 left-4 text-[11px] font-mono font-bold text-[--foreground-dim]/40">
-                  {config.imageRatio}
-                </div>
-
-                {/* Prompt content */}
-                <div className="absolute inset-0 p-6 md:p-8 flex flex-col">
-                  <div className="flex items-center gap-2 mb-4 shrink-0">
-                    <Sparkles size={14} className="text-[--accent]" />
-                    <h3 className="text-[11px] font-bold tracking-[0.2em] uppercase text-[--accent]">Live Prompt</h3>
-                    <div className="flex-1" />
-                    <div className="flex gap-1">
-                      {['8K', 'Hasselblad', 'UE5'].map(tag => (
-                        <span key={tag} className="px-1.5 py-0.5 bg-[--bg-surface] text-[9px] font-bold text-[--foreground-dim] rounded border border-[--border] uppercase">{tag}</span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex-1 overflow-y-auto min-h-0 space-y-0">
-                    {promptSegments.map((seg, i) => (
-                      <div key={i} className={cn("pb-3", i < promptSegments.length - 1 && "border-b border-[--border]/40 mb-3")}>
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-[--accent] block mb-1">{seg.label}</span>
-                        <p className="text-[15px] leading-relaxed text-[--foreground] font-medium">{seg.text}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <PromptCanvas />
           </div>
         </div>
 
