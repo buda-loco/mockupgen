@@ -1,24 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  --bg-base: #111111;
-  --bg-raised: #1A1A1A;
-  --bg-surface: #222222;
-  --bg-surface-hover: #2A2A2A;
-  --bg-inset: #0D0D0D;
-  --foreground: #E8E4DE;
-  --foreground-muted: #8A8580;
-  --foreground-dim: #5A5652;
-  --accent: #E8C840;
-  --accent-hover: #F0D860;
-  --accent-dim: #C4A830;
-  --accent-subtle: rgba(232, 200, 64, 0.10);
-  --accent-glow: rgba(232, 200, 64, 0.20);
-  --border: #2A2725;
-  --border-light: #333030;
-  --border-accent: rgba(232, 200, 64, 0.35);
-  --danger: #E05555;
-  --success: #55B855;
+  /* Softer dark palette — charcoal, not jet black */
+  --bg-base: #161618;
+  --bg-raised: #1E1E21;
+  --bg-surface: #252528;
+  --bg-surface-hover: #2C2C30;
+  --bg-inset: #121214;
+
+  /* Warm off-white text, not pure white */
+  --foreground: #D4D0C8;
+  --foreground-muted: #908C84;
+  --foreground-dim: #605C56;
+
+  /* Warm gold accent — visible but not screaming */
+  --accent: #D4A843;
+  --accent-hover: #E0B850;
+  --accent-dim: #B89038;
+  --accent-subtle: rgba(212, 168, 67, 0.08);
+  --accent-glow: rgba(212, 168, 67, 0.12);
+
+  /* Softer borders */
+  --border: #2A2A2E;
+  --border-light: #32323A;
+  --border-accent: rgba(212, 168, 67, 0.25);
+
+  --danger: #D45555;
+  --success: #5AAF5A;
 }
 
 @theme inline {
@@ -38,45 +46,32 @@ body {
 }
 
 /* Scrollbar */
-::-webkit-scrollbar {
-  width: 5px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border-light);
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-dim);
-}
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--foreground-dim); }
 
 /* Range slider */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
-  height: 3px;
+  height: 2px;
   background: var(--border-light);
   border-radius: 999px;
   outline: none;
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  appearance: none;
   width: 14px;
   height: 14px;
   border-radius: 50%;
   background: var(--accent);
   cursor: pointer;
   border: 2px solid var(--bg-raised);
-  box-shadow: 0 0 8px rgba(232, 200, 64, 0.3);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  transition: transform 0.15s ease;
 }
-input[type="range"]::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-  box-shadow: 0 0 12px rgba(232, 200, 64, 0.5);
-}
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
 input[type="range"]::-moz-range-thumb {
   width: 14px;
   height: 14px;
@@ -84,7 +79,6 @@ input[type="range"]::-moz-range-thumb {
   background: var(--accent);
   cursor: pointer;
   border: 2px solid var(--bg-raised);
-  box-shadow: 0 0 8px rgba(232, 200, 64, 0.3);
 }
 
 /* Selection */
@@ -93,8 +87,8 @@ input[type="range"]::-moz-range-thumb {
   color: var(--bg-base);
 }
 
-/* Focus ring */
+/* Focus ring — subtle */
 *:focus-visible {
-  outline: 2px solid var(--accent-dim);
+  outline: 1.5px solid var(--accent-dim);
   outline-offset: 2px;
 }

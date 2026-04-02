@@ -217,7 +217,7 @@ function AngleWidget({ angle, onChange }: { angle: CustomAngle; onChange: (a: Cu
 
   const slabFaces = [
     { verts: [0, 1, 2, 3], nz: -1, color: '#2A2520', label: '',      isFront: false },
-    { verts: [5, 4, 7, 6], nz:  1, color: '#E8C840', label: 'front', isFront: true },
+    { verts: [5, 4, 7, 6], nz:  1, color: '#D4A843', label: 'front', isFront: true },
     { verts: [4, 0, 3, 7], nz:  0, color: '#3D332A', label: '',      isFront: false },
     { verts: [1, 5, 6, 2], nz:  0, color: '#3D332A', label: '',      isFront: false },
     { verts: [4, 5, 1, 0], nz:  0, color: '#4A3E33', label: '',      isFront: false },
@@ -351,7 +351,7 @@ function TogglePill({ label, active, onClick, icon: Icon }: {
       className={cn(
         "px-3 py-2 rounded-lg border text-[13px] font-medium transition-all duration-150 flex items-center gap-1.5",
         active
-          ? "border-[--accent] bg-[--accent] text-[--bg-base] font-semibold"
+          ? "border-[--accent] bg-[--accent-subtle] text-[--accent] ring-1 ring-[--accent]/30"
           : "border-[--border] hover:border-[--border-accent] bg-[--bg-surface] text-[--foreground-muted] hover:text-[--foreground]"
       )}>
       {Icon && <Icon size={12} strokeWidth={2} />}
@@ -914,7 +914,7 @@ export default function MockupGenerator() {
         {config.swatchColors.length < 5 && (
           <label className="relative w-11 h-11 rounded-xl border-2 border-dashed border-[--border] cursor-pointer flex items-center justify-center hover:border-[--accent-dim] transition-colors">
             <Plus size={14} className="text-[--foreground-dim]" />
-            <input type="color" value="#E8C840"
+            <input type="color" value="#D4A843"
               onChange={e => addSwatchColor(e.target.value)}
               className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
           </label>
@@ -949,7 +949,7 @@ export default function MockupGenerator() {
           "flex items-center gap-1.5 px-3 py-2 transition-all font-semibold",
           compact ? "text-[11px] px-2.5 py-1.5" : "text-[13px]",
           uiMode === 'wizard'
-            ? "bg-[--accent] text-[--bg-base]"
+            ? "bg-[--accent-subtle] text-[--accent] border-[--accent]"
             : "text-[--foreground-dim] hover:text-[--foreground]"
         )}>
         <Wand2 size={compact ? 11 : 13} />
@@ -961,7 +961,7 @@ export default function MockupGenerator() {
           "flex items-center gap-1.5 px-3 py-2 transition-all font-semibold",
           compact ? "text-[11px] px-2.5 py-1.5" : "text-[13px]",
           uiMode === 'studio'
-            ? "bg-[--accent] text-[--bg-base]"
+            ? "bg-[--accent-subtle] text-[--accent] border-[--accent]"
             : "text-[--foreground-dim] hover:text-[--foreground]"
         )}>
         <LayoutGrid size={compact ? 11 : 13} />
@@ -1079,7 +1079,7 @@ export default function MockupGenerator() {
                         <div className="text-xs text-[--foreground-muted]">{new Date(preset.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>
                       </div>
                       <button onClick={() => { loadPreset(preset); goNext(); }}
-                        className="px-3 py-1.5 rounded-lg bg-[--bg-surface] text-[12px] font-semibold text-[--foreground-muted] hover:bg-[--accent] hover:text-[--bg-base] transition-all">
+                        className="px-3 py-1.5 rounded-lg bg-[--bg-surface] text-[12px] font-semibold text-[--foreground-muted] hover:bg-[--accent-subtle] hover:text-[--accent] transition-all">
                         Load
                       </button>
                       <button onClick={() => deletePreset(preset.name)}
@@ -1122,7 +1122,7 @@ export default function MockupGenerator() {
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all",
                   objectCategoryFilter === cat.id
-                    ? "bg-[--accent] text-[--bg-base]"
+                    ? "bg-[--accent-subtle] text-[--accent] border-[--accent]"
                     : "text-[--foreground-muted] hover:text-[--foreground] bg-[--bg-surface] border border-[--border]"
                 )}>
                 {cat.label}
@@ -1143,7 +1143,7 @@ export default function MockupGenerator() {
                     className={cn(
                       "flex flex-col items-center gap-2.5 p-4 rounded-2xl border-2 text-center transition-all",
                       isActive
-                        ? "border-[--accent] bg-[--accent] text-[--bg-base]"
+                        ? "border-[--accent] bg-[--accent-subtle] text-[--accent]"
                         : "border-[--border] bg-[--bg-raised] text-[--foreground-muted] hover:border-[--accent-dim] hover:text-[--foreground]"
                     )}>
                     <ObjIcon size={22} strokeWidth={1.5} />
@@ -1211,7 +1211,7 @@ export default function MockupGenerator() {
                     className={cn(
                       "flex flex-col items-center gap-2 py-3 px-1 rounded-xl border-2 transition-all",
                       isActive
-                        ? "border-[--accent] bg-[--accent] text-[--bg-base]"
+                        ? "border-[--accent] bg-[--accent-subtle] text-[--accent]"
                         : "border-[--border] bg-[--bg-surface] text-[--foreground-muted] hover:border-[--accent-dim]"
                     )}>
                     <div className="flex items-center justify-center w-8 h-8">
@@ -1474,11 +1474,11 @@ export default function MockupGenerator() {
           <div className="flex items-center gap-2">
             <div className="flex items-center rounded-xl border border-[--border] overflow-hidden bg-[--bg-surface]">
               <button onClick={() => setCopyFormat('text')}
-                className={cn("px-3 py-2 text-xs font-bold transition-all", copyFormat === 'text' ? "bg-[--accent] text-[--bg-base]" : "text-[--foreground-dim] hover:text-[--foreground]")}>
+                className={cn("px-3 py-2 text-xs font-bold transition-all", copyFormat === 'text' ? "bg-[--accent-subtle] text-[--accent] border-[--accent]" : "text-[--foreground-dim] hover:text-[--foreground]")}>
                 Text
               </button>
               <button onClick={() => setCopyFormat('json')}
-                className={cn("px-3 py-2 text-xs font-bold transition-all flex items-center gap-1", copyFormat === 'json' ? "bg-[--accent] text-[--bg-base]" : "text-[--foreground-dim] hover:text-[--foreground]")}>
+                className={cn("px-3 py-2 text-xs font-bold transition-all flex items-center gap-1", copyFormat === 'json' ? "bg-[--accent-subtle] text-[--accent] border-[--accent]" : "text-[--foreground-dim] hover:text-[--foreground]")}>
                 <Braces size={11} /> JSON
               </button>
             </div>
@@ -1487,7 +1487,7 @@ export default function MockupGenerator() {
                 "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all",
                 copied
                   ? "bg-[--success]/20 text-[--success] border border-[--success]/30"
-                  : "bg-[--accent] text-[--bg-base] hover:bg-[--accent-hover] shadow-lg shadow-[--accent]/10"
+                  : "bg-[--accent]/90 text-[--bg-base] hover:bg-[--accent] shadow-sm"
               )}>
               {copied ? <><Check size={14} /> Copied!</> : <><Copy size={14} /> Copy {copyFormat === 'json' ? 'JSON' : 'Prompt'}</>}
             </button>
@@ -1527,7 +1527,7 @@ export default function MockupGenerator() {
                   presetSaved
                     ? "bg-[--success]/20 text-[--success] border border-[--success]/30"
                     : presetName.trim()
-                      ? "bg-[--accent] text-[--bg-base] hover:bg-[--accent-hover]"
+                      ? "bg-[--accent]/90 text-[--bg-base] hover:bg-[--accent]"
                       : "bg-[--bg-surface] text-[--foreground-dim] border border-[--border] cursor-not-allowed"
                 )}>
                 {presetSaved ? <><Check size={13} /> Saved</> : <><Save size={13} /> Save</>}
@@ -1643,7 +1643,7 @@ export default function MockupGenerator() {
 
             {wizardStep < totalSteps - 1 ? (
               <button onClick={goNext}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[--accent] text-[--bg-base] text-sm font-bold hover:bg-[--accent-hover] transition-all shadow-lg shadow-[--accent]/20">
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[--accent] text-[--bg-base] text-sm font-bold hover:bg-[--accent-hover] transition-all shadow-sm">
                 Next
                 <ArrowRight size={15} />
               </button>
@@ -1653,7 +1653,7 @@ export default function MockupGenerator() {
                   "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all",
                   copied
                     ? "bg-[--success]/20 text-[--success] border border-[--success]/30"
-                    : "bg-[--accent] text-[--bg-base] hover:bg-[--accent-hover] shadow-lg shadow-[--accent]/20"
+                    : "bg-[--accent]/90 text-[--bg-base] hover:bg-[--accent] shadow-sm"
                 )}>
                 {copied ? <><Check size={15} /> Copied!</> : <><Copy size={15} /> Copy Prompt</>}
               </button>
@@ -1740,7 +1740,7 @@ export default function MockupGenerator() {
                     className={cn(
                       "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
                       presetSaved ? "bg-[--success]/20 text-[--success] border border-[--success]/30"
-                        : presetName.trim() ? "bg-[--accent] text-[--bg-base] hover:bg-[--accent-hover]"
+                        : presetName.trim() ? "bg-[--accent]/90 text-[--bg-base] hover:bg-[--accent]"
                           : "bg-[--bg-surface] text-[--foreground-dim] border border-[--border] cursor-not-allowed"
                     )}>
                     {presetSaved ? <><Check size={11} /> Saved</> : <><Save size={11} /> Save</>}
@@ -1845,7 +1845,7 @@ export default function MockupGenerator() {
                   )}>
                   <div className="flex items-center gap-2.5">
                     {isModified ? (
-                      <div className="w-1.5 h-1.5 rounded-full bg-[--accent] shrink-0 shadow-[0_0_6px_rgba(232,200,64,0.5)]" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-[--accent] shrink-0 shadow-none" />
                     ) : (
                       <div className="w-1.5 h-1.5 rounded-full bg-transparent shrink-0" />
                     )}
@@ -1881,7 +1881,7 @@ export default function MockupGenerator() {
                                   onClick={() => setConfig(prev => ({ ...prev, imageRatio: r.id as ImageRatio }))}
                                   className={cn(
                                     "flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-xl border transition-all",
-                                    isActive ? "border-[--accent] bg-[--accent] text-[--bg-base]" : "border-[--border] bg-[--bg-surface] text-[--foreground-muted] hover:border-[--border-accent]"
+                                    isActive ? "border-[--accent] bg-[--accent-subtle] text-[--accent]" : "border-[--border] bg-[--bg-surface] text-[--foreground-muted] hover:border-[--border-accent]"
                                   )}>
                                   <div className="flex items-center justify-center w-8 h-8">
                                     <div className={cn("border-2 rounded-sm", isActive ? "border-[--bg-base]" : "border-[--foreground-dim]")} style={{
@@ -1918,7 +1918,7 @@ export default function MockupGenerator() {
                                   onClick={() => setObjectCategoryFilter(cat.id)}
                                   className={cn(
                                     "px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider whitespace-nowrap transition-all",
-                                    objectCategoryFilter === cat.id ? "bg-[--accent] text-[--bg-base]" : "text-[--foreground-dim] hover:text-[--foreground-muted] hover:bg-[--bg-surface]"
+                                    objectCategoryFilter === cat.id ? "bg-[--accent-subtle] text-[--accent] border-[--accent]" : "text-[--foreground-dim] hover:text-[--foreground-muted] hover:bg-[--bg-surface]"
                                   )}>
                                   {cat.label}
                                 </button>
@@ -1936,7 +1936,7 @@ export default function MockupGenerator() {
                                       onClick={() => setConfig(prev => ({ ...prev, object: obj.id as ObjectType, objectDetails: getObjectDefaults(obj.id as ObjectType) }))}
                                       className={cn(
                                         "flex items-center gap-2 px-2.5 py-2 rounded-lg border text-left transition-all text-[12px] font-medium",
-                                        isActive ? "border-[--accent] bg-[--accent] text-[--bg-base] font-semibold" : "border-[--border] hover:border-[--border-accent] bg-[--bg-surface] text-[--foreground-muted] hover:text-[--foreground]"
+                                        isActive ? "border-[--accent] bg-[--accent-subtle] text-[--accent] ring-1 ring-[--accent]/30" : "border-[--border] hover:border-[--border-accent] bg-[--bg-surface] text-[--foreground-muted] hover:text-[--foreground]"
                                       )}>
                                       <ObjIcon size={12} strokeWidth={2} />
                                       <span className="truncate">{obj.label}</span>
@@ -2129,7 +2129,7 @@ export default function MockupGenerator() {
                               className={cn(
                                 "w-full flex items-center justify-between px-3 py-2.5 rounded-lg border transition-all text-[13px] font-medium",
                                 config.infiniteBackground
-                                  ? "border-[--accent] bg-[--accent] text-[--bg-base] font-semibold"
+                                  ? "border-[--accent] bg-[--accent-subtle] text-[--accent] ring-1 ring-[--accent]/30"
                                   : "border-[--border] hover:border-[--border-accent] bg-[--bg-surface] text-[--foreground-muted]"
                               )}>
                               <span>{config.infiniteBackground ? 'Infinite BG: ON' : 'Infinite BG: OFF'}</span>
@@ -2253,11 +2253,11 @@ export default function MockupGenerator() {
 
               <div className="flex items-center rounded-lg border border-[--border] overflow-hidden bg-[--bg-surface]">
                 <button onClick={() => setCopyFormat('text')}
-                  className={cn("px-2.5 py-1.5 text-[11px] font-bold transition-all", copyFormat === 'text' ? "bg-[--accent] text-[--bg-base]" : "text-[--foreground-dim] hover:text-[--foreground]")}>
+                  className={cn("px-2.5 py-1.5 text-[11px] font-bold transition-all", copyFormat === 'text' ? "bg-[--accent-subtle] text-[--accent] border-[--accent]" : "text-[--foreground-dim] hover:text-[--foreground]")}>
                   Text
                 </button>
                 <button onClick={() => setCopyFormat('json')}
-                  className={cn("px-2.5 py-1.5 text-[11px] font-bold transition-all flex items-center gap-1", copyFormat === 'json' ? "bg-[--accent] text-[--bg-base]" : "text-[--foreground-dim] hover:text-[--foreground]")}>
+                  className={cn("px-2.5 py-1.5 text-[11px] font-bold transition-all flex items-center gap-1", copyFormat === 'json' ? "bg-[--accent-subtle] text-[--accent] border-[--accent]" : "text-[--foreground-dim] hover:text-[--foreground]")}>
                   <Braces size={11} /> JSON
                 </button>
               </div>
@@ -2267,7 +2267,7 @@ export default function MockupGenerator() {
                   "flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg text-[13px] font-bold transition-all",
                   copied
                     ? "bg-[--success]/20 text-[--success] border border-[--success]/30"
-                    : "bg-[--accent] text-[--bg-base] hover:bg-[--accent-hover] shadow-lg shadow-[--accent]/10"
+                    : "bg-[--accent]/90 text-[--bg-base] hover:bg-[--accent] shadow-sm"
                 )}>
                 {copied ? <><Check size={13} /> Copied</> : <><Copy size={13} /><span className="hidden sm:inline"> Copy {copyFormat === 'json' ? 'JSON' : 'Prompt'}</span></>}
               </button>
