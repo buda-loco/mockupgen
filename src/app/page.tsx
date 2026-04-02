@@ -236,7 +236,7 @@ function AngleWidget({ angle, onChange }: { angle: CustomAngle; onChange: (a: Cu
 
   return (
     <div className="space-y-3">
-      <div className="relative rounded-xl border border-[--border-light] overflow-hidden select-none bg-[--bg-inset]"
+      <div className="relative rounded-xl border border-gray-700 overflow-hidden select-none bg-gray-950"
         style={{ cursor: hovered ? 'grab' : 'default' }}>
         <svg ref={svgRef} viewBox={`0 0 ${SIZE} ${SIZE}`} className="w-full"
           style={{ touchAction: 'none' }}
@@ -306,13 +306,13 @@ function AngleWidget({ angle, onChange }: { angle: CustomAngle; onChange: (a: Cu
         </svg>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <div className="bg-[--bg-inset] rounded-lg px-3 py-2 border border-[--border]">
+        <div className="bg-gray-950 rounded-lg px-3 py-2 border border-gray-700/50">
           <span className="text-[11px] font-bold text-[#F87171] uppercase block">Pitch (X)</span>
-          <span className="text-[13px] font-mono font-bold text-[--foreground]">{Math.round(angle.pitch)}° <span className="text-[--foreground-dim] text-[11px]">{pitchLabel}</span></span>
+          <span className="text-[13px] font-mono font-bold text-gray-100">{Math.round(angle.pitch)}° <span className="text-gray-500 text-[11px]">{pitchLabel}</span></span>
         </div>
-        <div className="bg-[--bg-inset] rounded-lg px-3 py-2 border border-[--border]">
+        <div className="bg-gray-950 rounded-lg px-3 py-2 border border-gray-700/50">
           <span className="text-[11px] font-bold text-[#4ADE80] uppercase block">Yaw (Y)</span>
-          <span className="text-[13px] font-mono font-bold text-[--foreground]">{Math.round(angle.yaw)}° <span className="text-[--foreground-dim] text-[11px]">{yawLabel}</span></span>
+          <span className="text-[13px] font-mono font-bold text-gray-100">{Math.round(angle.yaw)}° <span className="text-gray-500 text-[11px]">{yawLabel}</span></span>
         </div>
       </div>
       <div className="grid grid-cols-4 gap-1.5">
@@ -324,13 +324,13 @@ function AngleWidget({ angle, onChange }: { angle: CustomAngle; onChange: (a: Cu
         ].map(pre => (
           <button key={pre.label}
             onClick={() => onChange({ pitch: pre.p, yaw: pre.y })}
-            className="text-[11px] font-bold text-[--foreground-muted] hover:text-[--accent] hover:bg-[--accent-subtle] transition-all py-1.5 rounded-lg border border-[--border] bg-[--bg-surface]">
+            className="text-[11px] font-bold text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all py-1.5 rounded-lg border border-gray-700/50 bg-gray-800">
             {pre.label}
           </button>
         ))}
       </div>
       <button onClick={() => onChange({ pitch: 30, yaw: 30 })}
-        className="w-full flex items-center justify-center gap-1.5 text-[12px] font-medium text-[--foreground-dim] hover:text-[--accent] transition-colors py-1">
+        className="w-full flex items-center justify-center gap-1.5 text-[12px] font-medium text-gray-500 hover:text-indigo-400 transition-colors py-1">
         <RotateCcw size={10} /> Reset
       </button>
     </div>
@@ -347,8 +347,8 @@ function TogglePill({ label, active, onClick, icon: Icon }: {
       className={cn(
         "px-4 py-2.5 rounded-xl border text-sm transition-all duration-200 flex items-center gap-1.5 justify-center",
         active
-          ? "border-[--accent] bg-[--accent-subtle] text-[--accent] font-medium"
-          : "border-[--border] bg-[--bg-surface] text-[--foreground-muted] hover:border-[--border-light] hover:bg-[--bg-surface-hover] hover:text-[--foreground]"
+          ? "border-indigo-400 bg-indigo-500/10 text-indigo-400 font-medium"
+          : "border-gray-700/50 bg-gray-800 text-gray-400 hover:border-gray-700 hover:bg-gray-700 hover:text-gray-100"
       )}>
       {Icon && <Icon size={12} strokeWidth={2} />}
       {label}
@@ -885,22 +885,22 @@ export default function MockupGenerator() {
       <div className="flex items-center gap-2 flex-wrap">
         {config.swatchColors.map((color, i) => (
           <div key={i} className="relative group">
-            <label className="block w-11 h-11 rounded-xl border-2 border-[--border] cursor-pointer overflow-hidden hover:border-[--accent] transition-colors"
+            <label className="block w-11 h-11 rounded-xl border-2 border-gray-700/50 cursor-pointer overflow-hidden hover:border-indigo-400 transition-colors"
               style={{ backgroundColor: color }}>
               <input type="color" value={color}
                 onChange={e => updateSwatchColor(i, e.target.value)}
                 className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
             </label>
             <button onClick={() => removeSwatchColor(i)}
-              className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[--danger] text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-400 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <X size={8} strokeWidth={3} />
             </button>
-            <span className="block text-[9px] font-mono text-[--foreground-dim] text-center mt-1 leading-none">{color}</span>
+            <span className="block text-[9px] font-mono text-gray-500 text-center mt-1 leading-none">{color}</span>
           </div>
         ))}
         {config.swatchColors.length < 5 && (
-          <label className="relative w-11 h-11 rounded-xl border-2 border-dashed border-[--border] cursor-pointer flex items-center justify-center hover:border-[--accent] transition-colors">
-            <Plus size={14} className="text-[--foreground-dim]" />
+          <label className="relative w-11 h-11 rounded-xl border-2 border-dashed border-gray-700/50 cursor-pointer flex items-center justify-center hover:border-indigo-400 transition-colors">
+            <Plus size={14} className="text-gray-500" />
             <input type="color" value="#818CF8"
               onChange={e => addSwatchColor(e.target.value)}
               className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
@@ -909,17 +909,17 @@ export default function MockupGenerator() {
       </div>
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageExtract} className="hidden" />
       <button onClick={() => fileInputRef.current?.click()} disabled={extracting}
-        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-[--border] text-sm font-medium transition-all duration-200 bg-[--bg-surface] text-[--foreground-muted] hover:border-[--border-light] hover:bg-[--bg-surface-hover]">
+        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-gray-700/50 text-sm font-medium transition-all duration-200 bg-gray-800 text-gray-400 hover:border-gray-700 hover:bg-gray-700">
         {extracting ? (
-          <><div className="w-3 h-3 border-2 border-[--accent]/30 border-t-[--accent] rounded-full animate-spin" /><span>Extracting...</span></>
+          <><div className="w-3 h-3 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" /><span>Extracting...</span></>
         ) : (
           <><ImagePlus size={14} /><span>Extract from Image</span></>
         )}
       </button>
-      <p className="text-[11px] text-[--foreground-dim]">100% local — never uploaded.</p>
+      <p className="text-[11px] text-gray-500">100% local — never uploaded.</p>
       {config.swatchColors.length > 0 && (
         <button onClick={() => setConfig(prev => ({ ...prev, swatchColors: [] }))}
-          className="text-[12px] font-medium text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1">
+          className="text-[12px] font-medium text-gray-500 hover:text-indigo-400 transition-colors flex items-center gap-1">
           <RotateCcw size={10} /> Clear colors
         </button>
       )}
@@ -930,7 +930,7 @@ export default function MockupGenerator() {
 
   const ModeSwitcher = ({ compact = false }: { compact?: boolean }) => (
     <div className={cn(
-      "flex items-center rounded-xl border border-[--border] overflow-hidden bg-[--bg-surface]",
+      "flex items-center rounded-xl border border-gray-700/50 overflow-hidden bg-gray-800",
       compact && "text-[12px]"
     )}>
       <button
@@ -939,8 +939,8 @@ export default function MockupGenerator() {
           "flex items-center gap-1.5 px-3 py-2 transition-all duration-200 font-semibold",
           compact ? "text-[11px] px-2.5 py-1.5" : "text-[13px]",
           uiMode === 'wizard'
-            ? "bg-[--accent-subtle] text-[--accent]"
-            : "text-[--foreground-dim] hover:text-[--foreground]"
+            ? "bg-indigo-500/10 text-indigo-400"
+            : "text-gray-500 hover:text-gray-100"
         )}>
         <Wand2 size={compact ? 11 : 13} />
         {!compact && 'Wizard'}
@@ -951,8 +951,8 @@ export default function MockupGenerator() {
           "flex items-center gap-1.5 px-3 py-2 transition-all duration-200 font-semibold",
           compact ? "text-[11px] px-2.5 py-1.5" : "text-[13px]",
           uiMode === 'studio'
-            ? "bg-[--accent-subtle] text-[--accent]"
-            : "text-[--foreground-dim] hover:text-[--foreground]"
+            ? "bg-indigo-500/10 text-indigo-400"
+            : "text-gray-500 hover:text-gray-100"
         )}>
         <LayoutGrid size={compact ? 11 : 13} />
         {!compact && 'Studio'}
@@ -963,30 +963,30 @@ export default function MockupGenerator() {
   // ── Prompt Preview Panel ─────────────────────────────────────────────────
 
   const PromptPreview = ({ maxH = '70vh' }: { maxH?: string }) => (
-    <div className="rounded-2xl border border-[--border] bg-[--bg-surface] overflow-hidden flex flex-col" style={{ maxHeight: maxH }}>
+    <div className="rounded-2xl border border-gray-700/50 bg-gray-800 overflow-hidden flex flex-col" style={{ maxHeight: maxH }}>
       {/* Header */}
-      <div className="px-5 py-3.5 border-b border-[--border] flex items-center gap-2.5 shrink-0">
-        <div className="w-2 h-2 rounded-full bg-[--accent] animate-pulse" />
-        <span className="text-xs font-semibold text-[--accent] tracking-wide">Live Prompt</span>
+      <div className="px-5 py-3.5 border-b border-gray-700/50 flex items-center gap-2.5 shrink-0">
+        <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+        <span className="text-xs font-semibold text-indigo-400 tracking-wide">Live Prompt</span>
         <div className="flex-1" />
         <div className="flex items-center gap-2">
-          <span className="text-xs text-[--foreground-dim] font-mono">{wordCount}w</span>
+          <span className="text-xs text-gray-500 font-mono">{wordCount}w</span>
           <div className="flex gap-1">
             {['8K', 'UE5'].map(tag => (
-              <span key={tag} className="px-1.5 py-0.5 bg-[--bg-inset] text-[9px] font-bold text-[--foreground-dim] rounded-md border border-[--border] uppercase tracking-wider">{tag}</span>
+              <span key={tag} className="px-1.5 py-0.5 bg-gray-950 text-[9px] font-bold text-gray-500 rounded-md border border-gray-700/50 uppercase tracking-wider">{tag}</span>
             ))}
           </div>
         </div>
       </div>
       {/* Completeness bar */}
-      <div className="px-5 py-2 border-b border-[--border] shrink-0">
+      <div className="px-5 py-2 border-b border-gray-700/50 shrink-0">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] font-medium text-[--foreground-dim] uppercase tracking-widest">Richness</span>
-          <span className="text-xs font-semibold text-[--accent]">{completeness.label} · {completeness.score}%</span>
+          <span className="text-[10px] font-medium text-gray-500 uppercase tracking-widest">Richness</span>
+          <span className="text-xs font-semibold text-indigo-400">{completeness.label} · {completeness.score}%</span>
         </div>
-        <div className="h-1 bg-[--bg-inset] rounded-full overflow-hidden">
+        <div className="h-1 bg-gray-950 rounded-full overflow-hidden">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-[--accent-dim] to-[--accent]"
+            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-indigo-400"
             animate={{ width: `${completeness.score}%` }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
           />
@@ -996,21 +996,21 @@ export default function MockupGenerator() {
       <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
         {promptSegments.map((seg, i) => (
           <div key={i}>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[--accent] block mb-1.5">{seg.label}</span>
-            <p className="text-[13px] leading-relaxed text-[--foreground-muted]">{seg.text}</p>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 block mb-1.5">{seg.label}</span>
+            <p className="text-[13px] leading-relaxed text-gray-400">{seg.text}</p>
           </div>
         ))}
       </div>
       {/* Copy footer */}
-      <div className="p-4 border-t border-[--border] shrink-0">
+      <div className="p-4 border-t border-gray-700/50 shrink-0">
         <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-xl border border-[--border] overflow-hidden bg-[--bg-inset] text-[11px]">
+          <div className="flex items-center rounded-xl border border-gray-700/50 overflow-hidden bg-gray-950 text-[11px]">
             <button onClick={() => setCopyFormat('text')}
-              className={cn("px-3 py-1.5 font-bold transition-all duration-200", copyFormat === 'text' ? "bg-[--accent-subtle] text-[--accent]" : "text-[--foreground-dim] hover:text-[--foreground]")}>
+              className={cn("px-3 py-1.5 font-bold transition-all duration-200", copyFormat === 'text' ? "bg-indigo-500/10 text-indigo-400" : "text-gray-500 hover:text-gray-100")}>
               Text
             </button>
             <button onClick={() => setCopyFormat('json')}
-              className={cn("px-3 py-1.5 font-bold transition-all duration-200 flex items-center gap-1", copyFormat === 'json' ? "bg-[--accent-subtle] text-[--accent]" : "text-[--foreground-dim] hover:text-[--foreground]")}>
+              className={cn("px-3 py-1.5 font-bold transition-all duration-200 flex items-center gap-1", copyFormat === 'json' ? "bg-indigo-500/10 text-indigo-400" : "text-gray-500 hover:text-gray-100")}>
               <Braces size={10} /> JSON
             </button>
           </div>
@@ -1018,8 +1018,8 @@ export default function MockupGenerator() {
             className={cn(
               "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
               copied
-                ? "bg-[--success]/15 text-[--success] border border-[--success]/25"
-                : "bg-[--accent-dim] text-white hover:bg-[--accent]"
+                ? "bg-green-400/15 text-green-400 border border-green-400/25"
+                : "bg-indigo-500 text-white hover:bg-indigo-400"
             )}>
             {copied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy</>}
           </button>
@@ -1047,32 +1047,32 @@ export default function MockupGenerator() {
         <div className="space-y-6">
           <button
             onClick={() => { setConfig(DEFAULT_CONFIG); goNext(); }}
-            className="w-full flex items-center gap-4 p-5 rounded-2xl border border-dashed border-[--border-light] hover:border-[--accent] hover:bg-[--accent-subtle] transition-all duration-200 group">
-            <div className="w-12 h-12 rounded-2xl bg-[--bg-surface] flex items-center justify-center shrink-0 group-hover:bg-[--accent-subtle] transition-colors">
-              <Plus size={20} className="text-[--foreground-dim] group-hover:text-[--accent]" />
+            className="w-full flex items-center gap-4 p-5 rounded-2xl border border-dashed border-gray-700 hover:border-indigo-400 hover:bg-indigo-500/10 transition-all duration-200 group">
+            <div className="w-12 h-12 rounded-2xl bg-gray-800 flex items-center justify-center shrink-0 group-hover:bg-indigo-500/10 transition-colors">
+              <Plus size={20} className="text-gray-500 group-hover:text-indigo-400" />
             </div>
             <div className="text-left flex-1">
-              <div className="text-base font-semibold text-[--foreground] mb-0.5">Start from scratch</div>
-              <div className="text-sm text-[--foreground-muted]">Begin with default settings</div>
+              <div className="text-base font-semibold text-gray-100 mb-0.5">Start from scratch</div>
+              <div className="text-sm text-gray-400">Begin with default settings</div>
             </div>
-            <ArrowRight size={16} className="text-[--foreground-dim] group-hover:text-[--accent] transition-colors" />
+            <ArrowRight size={16} className="text-gray-500 group-hover:text-indigo-400 transition-colors" />
           </button>
 
           <div>
-            <p className="text-xs font-semibold text-[--foreground-dim] uppercase tracking-widest mb-3">Built-in Presets</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Built-in Presets</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {BUILT_IN_PRESETS.map(preset => {
                 const ObjIcon = OBJECT_ICONS[preset.config.object] || Package;
                 return (
                   <button key={preset.name}
                     onClick={() => { loadPreset(preset); goNext(); }}
-                    className="flex items-center gap-3 p-4 rounded-2xl border border-[--border] bg-[--bg-surface] hover:border-[--border-accent] hover:bg-[--bg-surface-hover] transition-all duration-200 text-left group">
-                    <div className="w-10 h-10 rounded-xl bg-[--bg-inset] group-hover:bg-[--accent-subtle] flex items-center justify-center shrink-0 transition-colors">
-                      <ObjIcon size={17} className="text-[--foreground-dim] group-hover:text-[--accent]" />
+                    className="flex items-center gap-3 p-4 rounded-2xl border border-gray-700/50 bg-gray-800 hover:border-indigo-400/25 hover:bg-gray-700 transition-all duration-200 text-left group">
+                    <div className="w-10 h-10 rounded-xl bg-gray-950 group-hover:bg-indigo-500/10 flex items-center justify-center shrink-0 transition-colors">
+                      <ObjIcon size={17} className="text-gray-500 group-hover:text-indigo-400" />
                     </div>
                     <div className="min-w-0">
-                      <div className="text-sm font-semibold text-[--foreground] truncate">{preset.name}</div>
-                      <div className="text-xs text-[--foreground-muted] truncate">{label(OBJECTS, preset.config.object)} · {label(CAMERAS, preset.config.camera)}</div>
+                      <div className="text-sm font-semibold text-gray-100 truncate">{preset.name}</div>
+                      <div className="text-xs text-gray-400 truncate">{label(OBJECTS, preset.config.object)} · {label(CAMERAS, preset.config.camera)}</div>
                     </div>
                   </button>
                 );
@@ -1082,26 +1082,26 @@ export default function MockupGenerator() {
 
           {presets.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-[--foreground-dim] uppercase tracking-widest mb-3">My Presets</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">My Presets</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {presets.map(preset => {
                   const ObjIcon = OBJECT_ICONS[preset.config.object] || Package;
                   return (
                     <div key={preset.name}
-                      className="flex items-center gap-3 p-4 rounded-2xl border border-[--border] bg-[--bg-surface] hover:border-[--border-light] transition-all group">
-                      <div className="w-10 h-10 rounded-xl bg-[--bg-inset] flex items-center justify-center shrink-0">
-                        <ObjIcon size={17} className="text-[--foreground-dim]" />
+                      className="flex items-center gap-3 p-4 rounded-2xl border border-gray-700/50 bg-gray-800 hover:border-gray-700 transition-all group">
+                      <div className="w-10 h-10 rounded-xl bg-gray-950 flex items-center justify-center shrink-0">
+                        <ObjIcon size={17} className="text-gray-500" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold text-[--foreground] truncate">{preset.name}</div>
-                        <div className="text-xs text-[--foreground-muted]">{new Date(preset.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>
+                        <div className="text-sm font-semibold text-gray-100 truncate">{preset.name}</div>
+                        <div className="text-xs text-gray-400">{new Date(preset.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>
                       </div>
                       <button onClick={() => { loadPreset(preset); goNext(); }}
-                        className="px-3 py-1.5 rounded-lg bg-[--bg-inset] text-[12px] font-semibold text-[--foreground-muted] hover:bg-[--accent-subtle] hover:text-[--accent] transition-all">
+                        className="px-3 py-1.5 rounded-lg bg-gray-950 text-[12px] font-semibold text-gray-400 hover:bg-indigo-500/10 hover:text-indigo-400 transition-all">
                         Load
                       </button>
                       <button onClick={() => deletePreset(preset.name)}
-                        className="p-1.5 rounded-lg text-[--foreground-dim] hover:text-[--danger] hover:bg-[--danger]/10 transition-all opacity-0 group-hover:opacity-100">
+                        className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-all opacity-0 group-hover:opacity-100">
                         <Trash2 size={13} />
                       </button>
                     </div>
@@ -1116,17 +1116,17 @@ export default function MockupGenerator() {
       case 'object': return (
         <div className="space-y-4">
           <div className="relative">
-            <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-[--foreground-dim] pointer-events-none" />
+            <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
             <input
               type="text"
               value={objectSearch}
               onChange={e => setObjectSearch(e.target.value)}
               placeholder="Search objects..."
               autoComplete="off"
-              className="w-full pl-11 pr-9 py-3 text-sm bg-[--bg-surface] border border-[--border] rounded-xl focus:outline-none focus:border-[--accent] text-[--foreground] placeholder:text-[--foreground-dim] transition-colors"
+              className="w-full pl-11 pr-9 py-3 text-sm bg-gray-800 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors"
             />
             {objectSearch && (
-              <button onClick={() => setObjectSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-[--foreground-dim] hover:text-[--foreground]">
+              <button onClick={() => setObjectSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-100">
                 <X size={13} />
               </button>
             )}
@@ -1139,8 +1139,8 @@ export default function MockupGenerator() {
                 className={cn(
                   "px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 border",
                   objectCategoryFilter === cat.id
-                    ? "bg-[--accent-subtle] text-[--accent] border-[--accent]"
-                    : "text-[--foreground-muted] hover:text-[--foreground] bg-[--bg-surface] border-[--border]"
+                    ? "bg-indigo-500/10 text-indigo-400 border-indigo-400"
+                    : "text-gray-400 hover:text-gray-100 bg-gray-800 border-gray-700/50"
                 )}>
                 {cat.label}
               </button>
@@ -1148,7 +1148,7 @@ export default function MockupGenerator() {
           </div>
 
           {filteredObjects.length === 0 ? (
-            <p className="text-sm text-[--foreground-muted] py-8 text-center">No objects match your search</p>
+            <p className="text-sm text-gray-400 py-8 text-center">No objects match your search</p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {filteredObjects.map(obj => {
@@ -1160,12 +1160,12 @@ export default function MockupGenerator() {
                     className={cn(
                       "flex flex-col items-center gap-2.5 p-4 rounded-2xl border-2 text-center transition-all duration-200",
                       isActive
-                        ? "border-[--accent] bg-[--accent-subtle] text-[--accent]"
-                        : "border-[--border] bg-[--bg-surface] text-[--foreground-muted] hover:border-[--border-light] hover:bg-[--bg-surface-hover] hover:text-[--foreground]"
+                        ? "border-indigo-400 bg-indigo-500/10 text-indigo-400"
+                        : "border-gray-700/50 bg-gray-800 text-gray-400 hover:border-gray-700 hover:bg-gray-700 hover:text-gray-100"
                     )}>
                     <ObjIcon size={22} strokeWidth={1.5} />
                     <span className="text-xs font-semibold leading-tight">{obj.label}</span>
-                    {isActive && <Check size={12} className="text-[--accent]" />}
+                    {isActive && <Check size={12} className="text-indigo-400" />}
                   </button>
                 );
               })}
@@ -1179,8 +1179,8 @@ export default function MockupGenerator() {
           {hasObjectDetails ? (
             <>
               {(OBJECT_OPTIONS[config.object] ?? []).map(opt => (
-                <div key={opt.key} className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-3">
-                  <label className="text-sm font-medium text-[--foreground-muted]">{opt.label}</label>
+                <div key={opt.key} className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-3">
+                  <label className="text-sm font-medium text-gray-400">{opt.label}</label>
                   <div className={cn("grid gap-2", opt.choices.length <= 3 ? "grid-cols-3" : "grid-cols-2")}>
                     {opt.choices.map(choice => (
                       <TogglePill key={choice.id} label={choice.label}
@@ -1194,14 +1194,14 @@ export default function MockupGenerator() {
               ))}
             </>
           ) : (
-            <div className="py-10 text-center text-[--foreground-muted] text-sm rounded-2xl border border-[--border] bg-[--bg-surface]">
+            <div className="py-10 text-center text-gray-400 text-sm rounded-2xl border border-gray-700/50 bg-gray-800">
               No extra options for {label(OBJECTS, config.object)}.
             </div>
           )}
 
           {isPrintObject && (
-            <div className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-3">
-              <label className="text-sm font-medium text-[--foreground-muted]">Material Finish</label>
+            <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-3">
+              <label className="text-sm font-medium text-gray-400">Material Finish</label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {MATERIALS.map(mat => (
                   <TogglePill key={mat.id} label={mat.label} active={config.material === mat.id}
@@ -1215,8 +1215,8 @@ export default function MockupGenerator() {
 
       case 'camera': return (
         <div className="space-y-5">
-          <div className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-4">
-            <label className="text-sm font-medium text-[--foreground-muted]">Image Ratio</label>
+          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
+            <label className="text-sm font-medium text-gray-400">Image Ratio</label>
             <div className="grid grid-cols-4 gap-2">
               {IMAGE_RATIOS.map(r => {
                 const rd = RATIO_DIMENSIONS[r.id] || { w: 4, h: 3 };
@@ -1227,11 +1227,11 @@ export default function MockupGenerator() {
                     className={cn(
                       "flex flex-col items-center gap-2 py-3 px-1 rounded-xl border-2 transition-all duration-200",
                       isActive
-                        ? "border-[--accent] bg-[--accent-subtle] text-[--accent]"
-                        : "border-[--border] bg-[--bg-inset] text-[--foreground-muted] hover:border-[--border-light]"
+                        ? "border-indigo-400 bg-indigo-500/10 text-indigo-400"
+                        : "border-gray-700/50 bg-gray-950 text-gray-400 hover:border-gray-700"
                     )}>
                     <div className="flex items-center justify-center w-8 h-8">
-                      <div className={cn("border-2 rounded-sm", isActive ? "border-[--accent]" : "border-[--foreground-dim]")} style={{
+                      <div className={cn("border-2 rounded-sm", isActive ? "border-indigo-400" : "border-gray-500")} style={{
                         width: `${Math.min(24, (rd.w / Math.max(rd.w, rd.h)) * 24)}px`,
                         height: `${Math.min(24, (rd.h / Math.max(rd.w, rd.h)) * 24)}px`,
                       }} />
@@ -1243,8 +1243,8 @@ export default function MockupGenerator() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-4">
-            <label className="text-sm font-medium text-[--foreground-muted]">Camera Angle</label>
+          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
+            <label className="text-sm font-medium text-gray-400">Camera Angle</label>
             <div className="grid grid-cols-2 gap-2">
               {CAMERAS.map(cam => (
                 <TogglePill key={cam.id} label={cam.label} active={config.camera === cam.id}
@@ -1266,14 +1266,14 @@ export default function MockupGenerator() {
 
       case 'environment': return (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-4">
+          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-[--foreground-muted]">Infinite Background</label>
+              <label className="text-sm font-medium text-gray-400">Infinite Background</label>
               <button
                 onClick={() => setConfig(prev => ({ ...prev, infiniteBackground: !prev.infiniteBackground }))}
                 className={cn(
                   "w-10 h-6 rounded-full transition-colors duration-200 relative flex items-center",
-                  config.infiniteBackground ? "bg-[--accent]" : "bg-[--border-light]"
+                  config.infiniteBackground ? "bg-indigo-400" : "bg-gray-700"
                 )}>
                 <div className={cn(
                   "absolute w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200",
@@ -1285,18 +1285,18 @@ export default function MockupGenerator() {
               <div className="flex items-center gap-3">
                 <input type="color" value={config.infiniteBgColor}
                   onChange={e => setConfig(prev => ({ ...prev, infiniteBgColor: e.target.value }))}
-                  className="w-11 h-11 rounded-xl border border-[--border] cursor-pointer p-0.5 bg-transparent" />
+                  className="w-11 h-11 rounded-xl border border-gray-700/50 cursor-pointer p-0.5 bg-transparent" />
                 <input type="text" value={config.infiniteBgColor}
                   onChange={e => setConfig(prev => ({ ...prev, infiniteBgColor: e.target.value }))}
-                  className="flex-1 p-2.5 text-sm font-mono bg-[--bg-inset] border border-[--border] rounded-xl focus:outline-none focus:border-[--accent] text-[--foreground] transition-colors" />
+                  className="flex-1 p-2.5 text-sm font-mono bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 transition-colors" />
               </div>
             )}
           </div>
 
           {!config.infiniteBackground && (
             <>
-              <div className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-4">
-                <label className="text-sm font-medium text-[--foreground-muted]">Surface</label>
+              <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
+                <label className="text-sm font-medium text-gray-400">Surface</label>
                 <div className="grid grid-cols-2 gap-2">
                   {SURFACES.map(srf => (
                     <TogglePill key={srf.id} label={srf.label} active={config.surface === srf.id}
@@ -1305,8 +1305,8 @@ export default function MockupGenerator() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-4">
-                <label className="text-sm font-medium text-[--foreground-muted]">Setting</label>
+              <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
+                <label className="text-sm font-medium text-gray-400">Setting</label>
                 <div className="grid grid-cols-2 gap-2">
                   {SETTINGS.map(s => (
                     <TogglePill key={s.id} label={s.label} active={config.setting === s.id}
@@ -1321,8 +1321,8 @@ export default function MockupGenerator() {
 
       case 'lighting': return (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-4">
-            <label className="text-sm font-medium text-[--foreground-muted]">Lighting Style</label>
+          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
+            <label className="text-sm font-medium text-gray-400">Lighting Style</label>
             <div className="grid grid-cols-2 gap-2">
               {LIGHTINGS.map(lt => (
                 <TogglePill key={lt.id} label={lt.label} active={config.lighting === lt.id}
@@ -1331,10 +1331,10 @@ export default function MockupGenerator() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-4">
+          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
             <div className="flex justify-between items-center">
-              <label className="text-sm font-medium text-[--foreground-muted]">Intensity</label>
-              <span className="text-sm font-mono font-semibold text-[--accent]">{config.intensity}%</span>
+              <label className="text-sm font-medium text-gray-400">Intensity</label>
+              <span className="text-sm font-mono font-semibold text-indigo-400">{config.intensity}%</span>
             </div>
             <input type="range" min="0" max="100" value={config.intensity}
               onChange={e => setConfig(prev => ({ ...prev, intensity: parseInt(e.target.value) }))}
@@ -1345,8 +1345,8 @@ export default function MockupGenerator() {
 
       case 'style': return (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-4">
-            <label className="text-sm font-medium text-[--foreground-muted]">Asset Input Type</label>
+          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
+            <label className="text-sm font-medium text-gray-400">Asset Input Type</label>
             <div className="grid grid-cols-1 gap-2">
               {ASSET_INPUTS.map(ai => (
                 <TogglePill key={ai.id} label={ai.label} active={config.assetInput === ai.id}
@@ -1355,44 +1355,44 @@ export default function MockupGenerator() {
             </div>
             {config.assetInput === 'design-custom' && (
               <div className="space-y-2 pt-1">
-                <label className="text-xs font-medium text-[--foreground-dim]">Dimensions</label>
+                <label className="text-xs font-medium text-gray-500">Dimensions</label>
                 <input type="text" value={config.assetDimensions}
                   onChange={e => setConfig(prev => ({ ...prev, assetDimensions: e.target.value }))}
                   placeholder="e.g. 1920x1080px, A4, 210x297mm"
-                  className="w-full p-3 text-sm bg-[--bg-inset] border border-[--border] rounded-xl focus:outline-none focus:border-[--accent] text-[--foreground] placeholder:text-[--foreground-dim] transition-colors" />
+                  className="w-full p-3 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
               </div>
             )}
           </div>
 
-          <div className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-4">
-            <label className="text-sm font-medium text-[--foreground-muted]">Color Swatches</label>
+          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
+            <label className="text-sm font-medium text-gray-400">Color Swatches</label>
             <ColorSwatchesUI />
           </div>
 
-          <div className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-3">
-            <label className="text-sm font-medium text-[--foreground-muted]">Color Palette Description</label>
+          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-3">
+            <label className="text-sm font-medium text-gray-400">Color Palette Description</label>
             <input type="text" value={config.colorPalette ?? ''}
               onChange={e => setConfig(prev => ({ ...prev, colorPalette: e.target.value }))}
               placeholder="Warm neutrals, off-whites..."
-              className="w-full p-3 text-sm bg-[--bg-inset] border border-[--border] rounded-xl focus:outline-none focus:border-[--accent] text-[--foreground] placeholder:text-[--foreground-dim] transition-colors" />
+              className="w-full p-3 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
           </div>
 
-          <div className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-3">
-            <label className="text-sm font-medium text-[--foreground-muted]">Asset Description</label>
+          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-3">
+            <label className="text-sm font-medium text-gray-400">Asset Description</label>
             <textarea value={config.assetDescription}
               onChange={e => setConfig(prev => ({ ...prev, assetDescription: e.target.value }))}
               placeholder="e.g. A minimalist serif logo for a boutique hotel, embossed in dark olive green..."
-              className="w-full h-24 p-3 text-sm bg-[--bg-inset] border border-[--border] rounded-xl focus:outline-none focus:border-[--accent] resize-none text-[--foreground] placeholder:text-[--foreground-dim] transition-colors" />
+              className="w-full h-24 p-3 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 resize-none text-gray-100 placeholder:text-gray-500 transition-colors" />
           </div>
         </div>
       );
 
       case 'extras': return (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-4">
+          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
             <div>
-              <label className="text-sm font-medium text-[--foreground-muted]">Props</label>
-              <p className="text-xs text-[--foreground-dim] mt-1">Multi-select. Props appear near the hero object.</p>
+              <label className="text-sm font-medium text-gray-400">Props</label>
+              <p className="text-xs text-gray-500 mt-1">Multi-select. Props appear near the hero object.</p>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {PROPS.map(p => (
@@ -1402,14 +1402,14 @@ export default function MockupGenerator() {
             </div>
             {config.props.length > 0 && (
               <button onClick={() => setConfig(prev => ({ ...prev, props: [] }))}
-                className="text-xs font-medium text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1">
+                className="text-xs font-medium text-gray-500 hover:text-indigo-400 transition-colors flex items-center gap-1">
                 <RotateCcw size={10} /> Clear all
               </button>
             )}
           </div>
 
-          <div className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-4">
-            <label className="text-sm font-medium text-[--foreground-muted]">Hand Interaction</label>
+          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
+            <label className="text-sm font-medium text-gray-400">Hand Interaction</label>
             <div className="grid grid-cols-2 gap-2">
               {HANDS.map(h => (
                 <TogglePill key={h.id} label={h.label} active={config.hand === h.id}
@@ -1419,8 +1419,8 @@ export default function MockupGenerator() {
           </div>
 
           {isScreenObject && (
-            <div className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-4">
-              <label className="text-sm font-medium text-[--foreground-muted]">Screen Effects</label>
+            <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
+              <label className="text-sm font-medium text-gray-400">Screen Effects</label>
               <div className="grid grid-cols-1 gap-2">
                 {SCREEN_EFFECTS.map(fx => (
                   <TogglePill key={fx.id} label={fx.label} active={config.screenEffects.includes(fx.id as ScreenEffectType)}
@@ -1430,10 +1430,10 @@ export default function MockupGenerator() {
             </div>
           )}
 
-          <div className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-4">
+          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
             <div>
-              <label className="text-sm font-medium text-[--foreground-muted]">Imperfections</label>
-              <p className="text-xs text-[--foreground-dim] mt-1">Ultra-subtle details for photographic realism.</p>
+              <label className="text-sm font-medium text-gray-400">Imperfections</label>
+              <p className="text-xs text-gray-500 mt-1">Ultra-subtle details for photographic realism.</p>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {availableImperfections.map(imp => (
@@ -1443,7 +1443,7 @@ export default function MockupGenerator() {
             </div>
             {config.imperfections.length > 0 && (
               <button onClick={() => setConfig(prev => ({ ...prev, imperfections: [] }))}
-                className="text-xs font-medium text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1">
+                className="text-xs font-medium text-gray-500 hover:text-indigo-400 transition-colors flex items-center gap-1">
                 <RotateCcw size={10} /> Clear all
               </button>
             )}
@@ -1455,15 +1455,15 @@ export default function MockupGenerator() {
         <div className="space-y-5">
           <div className="flex flex-wrap gap-1.5">
             {summaryPills.map(pill => (
-              <span key={pill.k} className="flex items-center gap-1.5 px-2.5 py-1 bg-[--bg-surface] border border-[--border] rounded-full">
-                <span className="text-[10px] font-semibold text-[--foreground-dim] uppercase tracking-wide">{pill.k}</span>
-                <span className="text-xs font-medium text-[--foreground-muted]">{pill.v}</span>
+              <span key={pill.k} className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-800 border border-gray-700/50 rounded-full">
+                <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">{pill.k}</span>
+                <span className="text-xs font-medium text-gray-400">{pill.v}</span>
               </span>
             ))}
             {config.swatchColors.length > 0 && (
-              <span className="flex items-center gap-1 px-2.5 py-1 bg-[--bg-surface] border border-[--border] rounded-full">
+              <span className="flex items-center gap-1 px-2.5 py-1 bg-gray-800 border border-gray-700/50 rounded-full">
                 {config.swatchColors.map((c, i) => (
-                  <div key={i} className="w-3 h-3 rounded-full border border-[--border-light]" style={{ backgroundColor: c }} />
+                  <div key={i} className="w-3 h-3 rounded-full border border-gray-700" style={{ backgroundColor: c }} />
                 ))}
               </span>
             )}
@@ -1471,22 +1471,22 @@ export default function MockupGenerator() {
 
           <PromptPreview maxH="50vh" />
 
-          <div className="rounded-2xl border border-[--border] bg-[--bg-surface] p-5 space-y-3">
-            <label className="text-sm font-medium text-[--foreground-muted]">Save as Preset</label>
+          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-3">
+            <label className="text-sm font-medium text-gray-400">Save as Preset</label>
             <div className="flex gap-2">
               <input type="text" value={presetName}
                 onChange={e => setPresetName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && savePreset()}
                 placeholder="My preset name..."
-                className="flex-1 px-3 py-2.5 text-sm bg-[--bg-inset] border border-[--border] rounded-xl focus:outline-none focus:border-[--accent] text-[--foreground] placeholder:text-[--foreground-dim] transition-colors" />
+                className="flex-1 px-3 py-2.5 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
               <button onClick={savePreset} disabled={!presetName.trim()}
                 className={cn(
                   "flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200",
                   presetSaved
-                    ? "bg-[--success]/15 text-[--success] border border-[--success]/25"
+                    ? "bg-green-400/15 text-green-400 border border-green-400/25"
                     : presetName.trim()
-                      ? "bg-[--accent-dim] text-white hover:bg-[--accent]"
-                      : "bg-[--bg-inset] text-[--foreground-dim] border border-[--border] cursor-not-allowed"
+                      ? "bg-indigo-500 text-white hover:bg-indigo-400"
+                      : "bg-gray-950 text-gray-500 border border-gray-700/50 cursor-not-allowed"
                 )}>
                 {presetSaved ? <><Check size={13} /> Saved</> : <><Save size={13} /> Save</>}
               </button>
@@ -1494,7 +1494,7 @@ export default function MockupGenerator() {
           </div>
 
           <button onClick={() => setUiMode('studio')}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[--border] text-sm font-medium text-[--foreground-muted] hover:border-[--border-accent] hover:text-[--accent] transition-all duration-200">
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-gray-700/50 text-sm font-medium text-gray-400 hover:border-indigo-400/25 hover:text-indigo-400 transition-all duration-200">
             <LayoutGrid size={15} />
             Open in Studio mode
           </button>
@@ -1509,15 +1509,15 @@ export default function MockupGenerator() {
 
   if (uiMode === 'wizard') {
     return (
-      <main className="min-h-screen bg-[--bg-base] text-[--foreground] flex flex-col relative" style={{ fontFamily: SYSTEM_FONT }}>
+      <main className="min-h-screen bg-gray-950 text-gray-100 flex flex-col relative" style={{ fontFamily: SYSTEM_FONT }}>
         {/* Header */}
-        <header className="sticky top-0 z-30 glass border-b border-[--border]">
+        <header className="sticky top-0 z-30 glass border-b border-gray-700/50">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3.5 flex items-center gap-3">
             <div className="flex items-center gap-2.5 mr-2">
-              <div className="w-7 h-7 rounded-xl bg-[--accent-dim] flex items-center justify-center">
+              <div className="w-7 h-7 rounded-xl bg-indigo-500 flex items-center justify-center">
                 <Wand2 size={13} className="text-white" strokeWidth={2.5} />
               </div>
-              <span className="text-[11px] font-semibold tracking-widest text-[--accent] uppercase hidden sm:block">Nano Banana</span>
+              <span className="text-[11px] font-semibold tracking-widest text-indigo-400 uppercase hidden sm:block">Nano Banana</span>
             </div>
 
             {/* Step progress dots */}
@@ -1527,14 +1527,14 @@ export default function MockupGenerator() {
                   onClick={() => goToStep(i)}
                   className={cn(
                     "transition-all duration-300 rounded-full",
-                    i < wizardStep ? "w-5 h-1.5 bg-[--accent]" :
-                    i === wizardStep ? "w-5 h-1.5 bg-[--accent]" :
-                    "w-1.5 h-1.5 bg-[--border-light]"
+                    i < wizardStep ? "w-5 h-1.5 bg-indigo-400" :
+                    i === wizardStep ? "w-5 h-1.5 bg-indigo-400" :
+                    "w-1.5 h-1.5 bg-gray-700"
                   )} />
               ))}
             </div>
 
-            <span className="text-xs font-mono text-[--foreground-dim] shrink-0">{wizardStep + 1}/{totalSteps}</span>
+            <span className="text-xs font-mono text-gray-500 shrink-0">{wizardStep + 1}/{totalSteps}</span>
             <ModeSwitcher compact />
           </div>
         </header>
@@ -1554,14 +1554,14 @@ export default function MockupGenerator() {
 
                 {/* Step header */}
                 <div className="mb-10 text-center">
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[--accent-subtle] border border-[--border-accent] mb-5">
-                    {React.createElement(stepInfo.icon, { size: 13, className: "text-[--accent]" })}
-                    <span className="text-xs font-semibold text-[--accent]">Step {wizardStep + 1} of {totalSteps}</span>
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-400/25 mb-5">
+                    {React.createElement(stepInfo.icon, { size: 13, className: "text-indigo-400" })}
+                    <span className="text-xs font-semibold text-indigo-400">Step {wizardStep + 1} of {totalSteps}</span>
                   </div>
-                  <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[--foreground] mb-3 leading-tight">
+                  <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-gray-100 mb-3 leading-tight">
                     {stepInfo.title}
                   </h1>
-                  <p className="text-base text-[--foreground-muted] max-w-lg mx-auto">{stepInfo.subtitle}</p>
+                  <p className="text-base text-gray-400 max-w-lg mx-auto">{stepInfo.subtitle}</p>
                 </div>
 
                 {renderWizardStep()}
@@ -1571,7 +1571,7 @@ export default function MockupGenerator() {
         </div>
 
         {/* Footer nav */}
-        <div className="sticky bottom-0 z-20 glass border-t border-[--border]">
+        <div className="sticky bottom-0 z-20 glass border-t border-gray-700/50">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3.5 flex items-center gap-3">
             <button
               onClick={goBack}
@@ -1579,8 +1579,8 @@ export default function MockupGenerator() {
               className={cn(
                 "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                 wizardStep === 0
-                  ? "text-[--foreground-dim] cursor-not-allowed"
-                  : "text-[--foreground-muted] hover:text-[--foreground] hover:bg-[--bg-surface] border border-[--border]"
+                  ? "text-gray-500 cursor-not-allowed"
+                  : "text-gray-400 hover:text-gray-100 hover:bg-gray-800 border border-gray-700/50"
               )}>
               <ArrowLeft size={15} />
               Back
@@ -1590,14 +1590,14 @@ export default function MockupGenerator() {
 
             {getStepIsSkippable(wizardStep) && (
               <button onClick={goNext}
-                className="text-sm font-medium text-[--foreground-dim] hover:text-[--foreground-muted] transition-colors px-3 py-2.5">
+                className="text-sm font-medium text-gray-500 hover:text-gray-400 transition-colors px-3 py-2.5">
                 Skip
               </button>
             )}
 
             {wizardStep < totalSteps - 1 ? (
               <button onClick={goNext}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[--accent-dim] text-white text-sm font-semibold hover:bg-[--accent] transition-all duration-200">
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-500 text-white text-sm font-semibold hover:bg-indigo-400 transition-all duration-200">
                 Continue
                 <ArrowRight size={15} />
               </button>
@@ -1606,8 +1606,8 @@ export default function MockupGenerator() {
                 className={cn(
                   "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200",
                   copied
-                    ? "bg-[--success]/15 text-[--success] border border-[--success]/25"
-                    : "bg-[--accent-dim] text-white hover:bg-[--accent]"
+                    ? "bg-green-400/15 text-green-400 border border-green-400/25"
+                    : "bg-indigo-500 text-white hover:bg-indigo-400"
                 )}>
                 {copied ? <><Check size={15} /> Copied!</> : <><Copy size={15} /> Copy Prompt</>}
               </button>
@@ -1630,16 +1630,16 @@ export default function MockupGenerator() {
         <div className="space-y-5">
           {/* Object selector */}
           <div className="space-y-3">
-            <p className="text-sm font-medium text-[--foreground-muted]">Object Type</p>
+            <p className="text-sm font-medium text-gray-400">Object Type</p>
             <div className="relative">
-              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[--foreground-dim] pointer-events-none" />
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
               <input type="text" value={objectSearch}
                 onChange={e => setObjectSearch(e.target.value)}
                 placeholder="Search objects..."
                 autoComplete="off"
-                className="w-full pl-10 pr-9 py-2.5 text-sm bg-[--bg-inset] border border-[--border] rounded-xl focus:outline-none focus:border-[--accent] text-[--foreground] placeholder:text-[--foreground-dim] transition-colors" />
+                className="w-full pl-10 pr-9 py-2.5 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
               {objectSearch && (
-                <button onClick={() => setObjectSearch('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[--foreground-dim] hover:text-[--foreground]">
+                <button onClick={() => setObjectSearch('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-100">
                   <X size={12} />
                 </button>
               )}
@@ -1651,15 +1651,15 @@ export default function MockupGenerator() {
                   className={cn(
                     "px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 border",
                     objectCategoryFilter === cat.id
-                      ? "bg-[--accent-subtle] text-[--accent] border-[--accent]"
-                      : "text-[--foreground-dim] hover:text-[--foreground-muted] bg-[--bg-surface] border-[--border]"
+                      ? "bg-indigo-500/10 text-indigo-400 border-indigo-400"
+                      : "text-gray-500 hover:text-gray-400 bg-gray-800 border-gray-700/50"
                   )}>
                   {cat.label}
                 </button>
               ))}
             </div>
             {filteredObjects.length === 0 ? (
-              <p className="text-sm text-[--foreground-dim] py-4 text-center">No objects match</p>
+              <p className="text-sm text-gray-500 py-4 text-center">No objects match</p>
             ) : (
               <div className="grid grid-cols-2 gap-1.5">
                 {filteredObjects.map(obj => {
@@ -1671,8 +1671,8 @@ export default function MockupGenerator() {
                       className={cn(
                         "flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all duration-200 text-sm",
                         isActive
-                          ? "border-[--accent] bg-[--accent-subtle] text-[--accent] font-medium"
-                          : "border-[--border] bg-[--bg-surface] text-[--foreground-muted] hover:border-[--border-light] hover:bg-[--bg-surface-hover] hover:text-[--foreground]"
+                          ? "border-indigo-400 bg-indigo-500/10 text-indigo-400 font-medium"
+                          : "border-gray-700/50 bg-gray-800 text-gray-400 hover:border-gray-700 hover:bg-gray-700 hover:text-gray-100"
                       )}>
                       <ObjIcon size={13} strokeWidth={2} />
                       <span className="truncate text-xs">{obj.label}</span>
@@ -1686,10 +1686,10 @@ export default function MockupGenerator() {
           {/* Object Details */}
           {hasObjectDetails && (
             <div className="space-y-4">
-              <p className="text-sm font-medium text-[--foreground-muted] pt-2 border-t border-[--border]">Object Details</p>
+              <p className="text-sm font-medium text-gray-400 pt-2 border-t border-gray-700/50">Object Details</p>
               {(OBJECT_OPTIONS[config.object] ?? []).map(opt => (
                 <div key={opt.key} className="space-y-2">
-                  <label className="text-xs font-medium text-[--foreground-dim]">{opt.label}</label>
+                  <label className="text-xs font-medium text-gray-500">{opt.label}</label>
                   <div className={cn("grid gap-1.5", opt.choices.length <= 3 ? "grid-cols-3" : "grid-cols-2")}>
                     {opt.choices.map(choice => (
                       <TogglePill key={choice.id} label={choice.label}
@@ -1704,8 +1704,8 @@ export default function MockupGenerator() {
 
           {/* Material */}
           {isPrintObject && (
-            <div className="space-y-3 pt-2 border-t border-[--border]">
-              <label className="text-sm font-medium text-[--foreground-muted]">Material Finish</label>
+            <div className="space-y-3 pt-2 border-t border-gray-700/50">
+              <label className="text-sm font-medium text-gray-400">Material Finish</label>
               <div className="grid grid-cols-2 gap-1.5">
                 {MATERIALS.map(mat => (
                   <TogglePill key={mat.id} label={mat.label} active={config.material === mat.id}
@@ -1720,7 +1720,7 @@ export default function MockupGenerator() {
       case 'camera': return (
         <div className="space-y-5">
           <div className="space-y-3">
-            <p className="text-sm font-medium text-[--foreground-muted]">Image Ratio</p>
+            <p className="text-sm font-medium text-gray-400">Image Ratio</p>
             <div className="grid grid-cols-4 gap-1.5">
               {IMAGE_RATIOS.map(r => {
                 const rd = RATIO_DIMENSIONS[r.id] || { w: 4, h: 3 };
@@ -1731,11 +1731,11 @@ export default function MockupGenerator() {
                     className={cn(
                       "flex flex-col items-center gap-2 py-3 px-1 rounded-xl border-2 transition-all duration-200",
                       isActive
-                        ? "border-[--accent] bg-[--accent-subtle] text-[--accent]"
-                        : "border-[--border] bg-[--bg-surface] text-[--foreground-muted] hover:border-[--border-light]"
+                        ? "border-indigo-400 bg-indigo-500/10 text-indigo-400"
+                        : "border-gray-700/50 bg-gray-800 text-gray-400 hover:border-gray-700"
                     )}>
                     <div className="flex items-center justify-center w-8 h-8">
-                      <div className={cn("border-2 rounded-sm", isActive ? "border-[--accent]" : "border-[--foreground-dim]")} style={{
+                      <div className={cn("border-2 rounded-sm", isActive ? "border-indigo-400" : "border-gray-500")} style={{
                         width: `${Math.min(24, (rd.w / Math.max(rd.w, rd.h)) * 24)}px`,
                         height: `${Math.min(24, (rd.h / Math.max(rd.w, rd.h)) * 24)}px`,
                       }} />
@@ -1747,8 +1747,8 @@ export default function MockupGenerator() {
             </div>
           </div>
 
-          <div className="space-y-3 pt-2 border-t border-[--border]">
-            <p className="text-sm font-medium text-[--foreground-muted]">Camera Angle</p>
+          <div className="space-y-3 pt-2 border-t border-gray-700/50">
+            <p className="text-sm font-medium text-gray-400">Camera Angle</p>
             <div className="grid grid-cols-2 gap-1.5">
               {CAMERAS.map(cam => (
                 <TogglePill key={cam.id} label={cam.label} active={config.camera === cam.id}
@@ -1772,12 +1772,12 @@ export default function MockupGenerator() {
         <div className="space-y-5">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-[--foreground-muted]">Infinite Background</p>
+              <p className="text-sm font-medium text-gray-400">Infinite Background</p>
               <button
                 onClick={() => setConfig(prev => ({ ...prev, infiniteBackground: !prev.infiniteBackground }))}
                 className={cn(
                   "w-10 h-6 rounded-full transition-colors duration-200 relative flex items-center",
-                  config.infiniteBackground ? "bg-[--accent]" : "bg-[--border-light]"
+                  config.infiniteBackground ? "bg-indigo-400" : "bg-gray-700"
                 )}>
                 <div className={cn(
                   "absolute w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200",
@@ -1789,10 +1789,10 @@ export default function MockupGenerator() {
               <div className="flex items-center gap-3">
                 <input type="color" value={config.infiniteBgColor}
                   onChange={e => setConfig(prev => ({ ...prev, infiniteBgColor: e.target.value }))}
-                  className="w-10 h-10 rounded-xl border border-[--border] cursor-pointer p-0.5 bg-transparent" />
+                  className="w-10 h-10 rounded-xl border border-gray-700/50 cursor-pointer p-0.5 bg-transparent" />
                 <input type="text" value={config.infiniteBgColor}
                   onChange={e => setConfig(prev => ({ ...prev, infiniteBgColor: e.target.value }))}
-                  className="flex-1 p-2.5 text-sm font-mono bg-[--bg-inset] border border-[--border] rounded-xl focus:outline-none focus:border-[--accent] text-[--foreground] transition-colors" />
+                  className="flex-1 p-2.5 text-sm font-mono bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 transition-colors" />
               </div>
             )}
             {config.infiniteBackground && config.swatchColors.length > 0 && (
@@ -1800,7 +1800,7 @@ export default function MockupGenerator() {
                 {config.swatchColors.map((color, i) => (
                   <button key={i}
                     onClick={() => setConfig(prev => ({ ...prev, infiniteBgColor: color }))}
-                    className={cn("w-8 h-8 rounded-xl border-2 transition-all hover:scale-105", config.infiniteBgColor === color ? "border-[--accent]" : "border-[--border]")}
+                    className={cn("w-8 h-8 rounded-xl border-2 transition-all hover:scale-105", config.infiniteBgColor === color ? "border-indigo-400" : "border-gray-700/50")}
                     style={{ backgroundColor: color }} />
                 ))}
               </div>
@@ -1809,8 +1809,8 @@ export default function MockupGenerator() {
 
           {!config.infiniteBackground && (
             <>
-              <div className="space-y-3 pt-2 border-t border-[--border]">
-                <p className="text-sm font-medium text-[--foreground-muted]">Surface</p>
+              <div className="space-y-3 pt-2 border-t border-gray-700/50">
+                <p className="text-sm font-medium text-gray-400">Surface</p>
                 <div className="grid grid-cols-2 gap-1.5">
                   {SURFACES.map(srf => (
                     <TogglePill key={srf.id} label={srf.label} active={config.surface === srf.id}
@@ -1818,8 +1818,8 @@ export default function MockupGenerator() {
                   ))}
                 </div>
               </div>
-              <div className="space-y-3 pt-2 border-t border-[--border]">
-                <p className="text-sm font-medium text-[--foreground-muted]">Setting</p>
+              <div className="space-y-3 pt-2 border-t border-gray-700/50">
+                <p className="text-sm font-medium text-gray-400">Setting</p>
                 <div className="grid grid-cols-2 gap-1.5">
                   {SETTINGS.map(s => (
                     <TogglePill key={s.id} label={s.label} active={config.setting === s.id}
@@ -1835,7 +1835,7 @@ export default function MockupGenerator() {
       case 'lighting': return (
         <div className="space-y-5">
           <div className="space-y-3">
-            <p className="text-sm font-medium text-[--foreground-muted]">Lighting Style</p>
+            <p className="text-sm font-medium text-gray-400">Lighting Style</p>
             <div className="grid grid-cols-2 gap-1.5">
               {LIGHTINGS.map(lt => (
                 <TogglePill key={lt.id} label={lt.label} active={config.lighting === lt.id}
@@ -1843,10 +1843,10 @@ export default function MockupGenerator() {
               ))}
             </div>
           </div>
-          <div className="space-y-3 pt-2 border-t border-[--border]">
+          <div className="space-y-3 pt-2 border-t border-gray-700/50">
             <div className="flex justify-between items-center">
-              <p className="text-sm font-medium text-[--foreground-muted]">Intensity</p>
-              <span className="text-sm font-mono font-semibold text-[--accent]">{config.intensity}%</span>
+              <p className="text-sm font-medium text-gray-400">Intensity</p>
+              <span className="text-sm font-mono font-semibold text-indigo-400">{config.intensity}%</span>
             </div>
             <input type="range" min="0" max="100" value={config.intensity}
               onChange={e => setConfig(prev => ({ ...prev, intensity: parseInt(e.target.value) }))}
@@ -1858,7 +1858,7 @@ export default function MockupGenerator() {
       case 'style': return (
         <div className="space-y-5">
           <div className="space-y-3">
-            <p className="text-sm font-medium text-[--foreground-muted]">Asset Input</p>
+            <p className="text-sm font-medium text-gray-400">Asset Input</p>
             <div className="grid grid-cols-1 gap-1.5">
               {ASSET_INPUTS.map(ai => (
                 <TogglePill key={ai.id} label={ai.label} active={config.assetInput === ai.id}
@@ -1869,29 +1869,29 @@ export default function MockupGenerator() {
               <input type="text" value={config.assetDimensions}
                 onChange={e => setConfig(prev => ({ ...prev, assetDimensions: e.target.value }))}
                 placeholder="e.g. 1920x1080px, A4"
-                className="w-full p-2.5 text-sm bg-[--bg-inset] border border-[--border] rounded-xl focus:outline-none focus:border-[--accent] text-[--foreground] placeholder:text-[--foreground-dim] transition-colors" />
+                className="w-full p-2.5 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
             )}
           </div>
 
-          <div className="space-y-3 pt-2 border-t border-[--border]">
-            <p className="text-sm font-medium text-[--foreground-muted]">Color Swatches</p>
+          <div className="space-y-3 pt-2 border-t border-gray-700/50">
+            <p className="text-sm font-medium text-gray-400">Color Swatches</p>
             <ColorSwatchesUI />
           </div>
 
-          <div className="space-y-2 pt-2 border-t border-[--border]">
-            <p className="text-sm font-medium text-[--foreground-muted]">Palette Description</p>
+          <div className="space-y-2 pt-2 border-t border-gray-700/50">
+            <p className="text-sm font-medium text-gray-400">Palette Description</p>
             <input type="text" value={config.colorPalette ?? ''}
               onChange={e => setConfig(prev => ({ ...prev, colorPalette: e.target.value }))}
               placeholder="Warm neutrals, off-whites..."
-              className="w-full p-2.5 text-sm bg-[--bg-inset] border border-[--border] rounded-xl focus:outline-none focus:border-[--accent] text-[--foreground] placeholder:text-[--foreground-dim] transition-colors" />
+              className="w-full p-2.5 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
           </div>
 
-          <div className="space-y-2 pt-2 border-t border-[--border]">
-            <p className="text-sm font-medium text-[--foreground-muted]">Asset Description</p>
+          <div className="space-y-2 pt-2 border-t border-gray-700/50">
+            <p className="text-sm font-medium text-gray-400">Asset Description</p>
             <textarea value={config.assetDescription}
               onChange={e => setConfig(prev => ({ ...prev, assetDescription: e.target.value }))}
               placeholder="e.g. A minimalist serif logo for a boutique hotel..."
-              className="w-full h-20 p-2.5 text-sm bg-[--bg-inset] border border-[--border] rounded-xl focus:outline-none focus:border-[--accent] resize-none text-[--foreground] placeholder:text-[--foreground-dim] transition-colors" />
+              className="w-full h-20 p-2.5 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 resize-none text-gray-100 placeholder:text-gray-500 transition-colors" />
           </div>
         </div>
       );
@@ -1900,10 +1900,10 @@ export default function MockupGenerator() {
         <div className="space-y-5">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-[--foreground-muted]">Props</p>
+              <p className="text-sm font-medium text-gray-400">Props</p>
               {config.props.length > 0 && (
                 <button onClick={() => setConfig(prev => ({ ...prev, props: [] }))}
-                  className="text-xs text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1">
+                  className="text-xs text-gray-500 hover:text-indigo-400 transition-colors flex items-center gap-1">
                   <RotateCcw size={9} /> Clear
                 </button>
               )}
@@ -1916,8 +1916,8 @@ export default function MockupGenerator() {
             </div>
           </div>
 
-          <div className="space-y-3 pt-2 border-t border-[--border]">
-            <p className="text-sm font-medium text-[--foreground-muted]">Hand Interaction</p>
+          <div className="space-y-3 pt-2 border-t border-gray-700/50">
+            <p className="text-sm font-medium text-gray-400">Hand Interaction</p>
             <div className="grid grid-cols-2 gap-1.5">
               {HANDS.map(h => (
                 <TogglePill key={h.id} label={h.label} active={config.hand === h.id}
@@ -1927,8 +1927,8 @@ export default function MockupGenerator() {
           </div>
 
           {isScreenObject && (
-            <div className="space-y-3 pt-2 border-t border-[--border]">
-              <p className="text-sm font-medium text-[--foreground-muted]">Screen Effects</p>
+            <div className="space-y-3 pt-2 border-t border-gray-700/50">
+              <p className="text-sm font-medium text-gray-400">Screen Effects</p>
               <div className="grid grid-cols-1 gap-1.5">
                 {SCREEN_EFFECTS.map(fx => (
                   <TogglePill key={fx.id} label={fx.label} active={config.screenEffects.includes(fx.id as ScreenEffectType)}
@@ -1938,12 +1938,12 @@ export default function MockupGenerator() {
             </div>
           )}
 
-          <div className="space-y-3 pt-2 border-t border-[--border]">
+          <div className="space-y-3 pt-2 border-t border-gray-700/50">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-[--foreground-muted]">Imperfections</p>
+              <p className="text-sm font-medium text-gray-400">Imperfections</p>
               {config.imperfections.length > 0 && (
                 <button onClick={() => setConfig(prev => ({ ...prev, imperfections: [] }))}
-                  className="text-xs text-[--foreground-dim] hover:text-[--accent] transition-colors flex items-center gap-1">
+                  className="text-xs text-gray-500 hover:text-indigo-400 transition-colors flex items-center gap-1">
                   <RotateCcw size={9} /> Clear
                 </button>
               )}
@@ -1963,17 +1963,17 @@ export default function MockupGenerator() {
   };
 
   return (
-    <main className="flex flex-col min-h-screen bg-[--bg-base] text-[--foreground] relative" style={{ fontFamily: SYSTEM_FONT }}>
+    <main className="flex flex-col min-h-screen bg-gray-950 text-gray-100 relative" style={{ fontFamily: SYSTEM_FONT }}>
 
       {/* Top Nav Bar */}
-      <header className="sticky top-0 z-40 glass border-b border-[--border]">
+      <header className="sticky top-0 z-40 glass border-b border-gray-700/50">
         <div className="px-4 md:px-6 h-14 flex items-center gap-3">
           {/* Logo */}
           <div className="flex items-center gap-2.5 mr-4 shrink-0">
-            <div className="w-7 h-7 rounded-xl bg-[--accent-dim] flex items-center justify-center">
+            <div className="w-7 h-7 rounded-xl bg-indigo-500 flex items-center justify-center">
               <Wand2 size={13} className="text-white" strokeWidth={2.5} />
             </div>
-            <span className="text-sm font-semibold text-[--foreground] hidden sm:block">Mockup Studio</span>
+            <span className="text-sm font-semibold text-gray-100 hidden sm:block">Mockup Studio</span>
           </div>
 
           {/* Mode switcher */}
@@ -1982,17 +1982,17 @@ export default function MockupGenerator() {
           <div className="flex-1" />
 
           {/* Status breadcrumb */}
-          <div className="hidden lg:flex items-center gap-2 text-[12px] text-[--foreground-dim]">
-            <span className="text-[--foreground-muted] font-medium">{label(OBJECTS, config.object)}</span>
-            <span className="text-[--foreground-dim]">·</span>
+          <div className="hidden lg:flex items-center gap-2 text-[12px] text-gray-500">
+            <span className="text-gray-400 font-medium">{label(OBJECTS, config.object)}</span>
+            <span className="text-gray-500">·</span>
             <span>{config.camera === 'custom' ? 'Custom 3D' : label(CAMERAS, config.camera)}</span>
-            <span className="text-[--foreground-dim]">·</span>
+            <span className="text-gray-500">·</span>
             <span>{label(LIGHTINGS, config.lighting)}</span>
-            <span className="text-[--foreground-dim]">·</span>
+            <span className="text-gray-500">·</span>
             <span>{config.imageRatio}</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-1.5 text-[12px] text-[--foreground-dim] ml-4">
+          <div className="hidden md:flex items-center gap-1.5 text-[12px] text-gray-500 ml-4">
             <Hash size={10} />
             <span className="font-mono">{wordCount}w</span>
           </div>
@@ -2002,22 +2002,22 @@ export default function MockupGenerator() {
             className={cn(
               "relative flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-all duration-200",
               showPresetPanel
-                ? "border-[--border-accent] bg-[--accent-subtle] text-[--accent]"
-                : "border-[--border] bg-[--bg-surface] text-[--foreground-muted] hover:border-[--border-light] hover:text-[--foreground]"
+                ? "border-indigo-400/25 bg-indigo-500/10 text-indigo-400"
+                : "border-gray-700/50 bg-gray-800 text-gray-400 hover:border-gray-700 hover:text-gray-100"
             )}>
             <FolderOpen size={13} />
             <span className="hidden sm:inline">Presets</span>
-            <span className="px-1.5 py-0.5 rounded-full bg-[--accent-subtle] text-[--accent] text-[10px] font-bold ml-0.5">{presets.length + BUILT_IN_PRESETS.length}</span>
+            <span className="px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 text-[10px] font-bold ml-0.5">{presets.length + BUILT_IN_PRESETS.length}</span>
           </button>
 
           {/* Copy format toggle + copy button */}
-          <div className="flex items-center rounded-xl border border-[--border] overflow-hidden bg-[--bg-surface]">
+          <div className="flex items-center rounded-xl border border-gray-700/50 overflow-hidden bg-gray-800">
             <button onClick={() => setCopyFormat('text')}
-              className={cn("px-2.5 py-2 text-[11px] font-bold transition-all duration-200", copyFormat === 'text' ? "bg-[--accent-subtle] text-[--accent]" : "text-[--foreground-dim] hover:text-[--foreground]")}>
+              className={cn("px-2.5 py-2 text-[11px] font-bold transition-all duration-200", copyFormat === 'text' ? "bg-indigo-500/10 text-indigo-400" : "text-gray-500 hover:text-gray-100")}>
               Text
             </button>
             <button onClick={() => setCopyFormat('json')}
-              className={cn("px-2.5 py-2 text-[11px] font-bold transition-all duration-200 flex items-center gap-1", copyFormat === 'json' ? "bg-[--accent-subtle] text-[--accent]" : "text-[--foreground-dim] hover:text-[--foreground]")}>
+              className={cn("px-2.5 py-2 text-[11px] font-bold transition-all duration-200 flex items-center gap-1", copyFormat === 'json' ? "bg-indigo-500/10 text-indigo-400" : "text-gray-500 hover:text-gray-100")}>
               <Braces size={10} /> JSON
             </button>
           </div>
@@ -2026,8 +2026,8 @@ export default function MockupGenerator() {
             className={cn(
               "flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
               copied
-                ? "bg-[--success]/15 text-[--success] border border-[--success]/25"
-                : "bg-[--accent-dim] text-white hover:bg-[--accent]"
+                ? "bg-green-400/15 text-green-400 border border-green-400/25"
+                : "bg-indigo-500 text-white hover:bg-indigo-400"
             )}>
             {copied ? <><Check size={13} /> Copied</> : <><Copy size={13} /><span className="hidden sm:inline"> Copy</span></>}
           </button>
@@ -2042,63 +2042,63 @@ export default function MockupGenerator() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.18 }}
-            className="fixed top-14 right-4 z-50 w-80 glass border border-[--border] rounded-2xl shadow-2xl shadow-black/40 overflow-hidden">
-            <div className="p-4 border-b border-[--border]">
+            className="fixed top-14 right-4 z-50 w-80 glass border border-gray-700/50 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden">
+            <div className="p-4 border-b border-gray-700/50">
               <div className="flex items-center gap-2 mb-3">
                 <input type="text" value={presetName}
                   onChange={e => setPresetName(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && savePreset()}
                   placeholder="Preset name..."
-                  className="flex-1 px-3 py-2 text-sm bg-[--bg-inset] border border-[--border] rounded-xl focus:outline-none focus:border-[--accent] text-[--foreground] placeholder:text-[--foreground-dim] transition-colors" />
+                  className="flex-1 px-3 py-2 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
                 <button onClick={savePreset} disabled={!presetName.trim()}
                   className={cn(
                     "flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200",
-                    presetSaved ? "bg-[--success]/15 text-[--success] border border-[--success]/25"
-                      : presetName.trim() ? "bg-[--accent-dim] text-white hover:bg-[--accent]"
-                        : "bg-[--bg-surface] text-[--foreground-dim] border border-[--border] cursor-not-allowed"
+                    presetSaved ? "bg-green-400/15 text-green-400 border border-green-400/25"
+                      : presetName.trim() ? "bg-indigo-500 text-white hover:bg-indigo-400"
+                        : "bg-gray-800 text-gray-500 border border-gray-700/50 cursor-not-allowed"
                   )}>
                   {presetSaved ? <><Check size={11} /> Saved</> : <><Save size={11} /> Save</>}
                 </button>
               </div>
 
               <button onClick={() => setConfig(DEFAULT_CONFIG)}
-                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-[--border] text-xs font-medium text-[--foreground-muted] hover:border-[--border-light] hover:text-[--foreground] transition-all duration-200">
+                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-gray-700/50 text-xs font-medium text-gray-400 hover:border-gray-700 hover:text-gray-100 transition-all duration-200">
                 <RotateCcw size={11} /> Reset to defaults
               </button>
             </div>
 
             <div className="max-h-80 overflow-y-auto">
               <div className="p-3 space-y-1">
-                <p className="text-[10px] font-semibold text-[--foreground-dim] uppercase tracking-widest px-1 mb-2">Built-in</p>
+                <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-2">Built-in</p>
                 {BUILT_IN_PRESETS.map(preset => (
                   <button key={preset.name} onClick={() => loadPreset(preset)}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[--bg-surface-hover] transition-all duration-200 text-left group">
-                    <div className="w-6 h-6 rounded-lg bg-[--bg-inset] flex items-center justify-center shrink-0">
-                      {React.createElement(OBJECT_ICONS[preset.config.object] || Package, { size: 12, className: "text-[--foreground-dim]" })}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-700 transition-all duration-200 text-left group">
+                    <div className="w-6 h-6 rounded-lg bg-gray-950 flex items-center justify-center shrink-0">
+                      {React.createElement(OBJECT_ICONS[preset.config.object] || Package, { size: 12, className: "text-gray-500" })}
                     </div>
-                    <span className="text-sm font-medium text-[--foreground-muted] group-hover:text-[--foreground] flex-1 truncate">{preset.name}</span>
-                    <span className="text-[10px] text-[--accent] font-bold border border-[--border-accent] rounded-md px-1.5 py-0.5 shrink-0">Built-in</span>
+                    <span className="text-sm font-medium text-gray-400 group-hover:text-gray-100 flex-1 truncate">{preset.name}</span>
+                    <span className="text-[10px] text-indigo-400 font-bold border border-indigo-400/25 rounded-md px-1.5 py-0.5 shrink-0">Built-in</span>
                   </button>
                 ))}
 
                 {presets.length > 0 && (
                   <>
-                    <p className="text-[10px] font-semibold text-[--foreground-dim] uppercase tracking-widest px-1 mt-3 mb-2">My Presets</p>
+                    <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest px-1 mt-3 mb-2">My Presets</p>
                     {presets.map(preset => (
                       <div key={preset.name}
-                        className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-[--bg-surface-hover] transition-all duration-200 group">
-                        <button onClick={() => loadPreset(preset)} className="flex-1 text-left text-sm font-medium text-[--foreground-muted] group-hover:text-[--foreground] truncate">
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-gray-700 transition-all duration-200 group">
+                        <button onClick={() => loadPreset(preset)} className="flex-1 text-left text-sm font-medium text-gray-400 group-hover:text-gray-100 truncate">
                           {preset.name}
                         </button>
                         <button onClick={() => deletePreset(preset.name)}
-                          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-[--foreground-dim] hover:text-[--danger] transition-all">
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-gray-500 hover:text-red-400 transition-all">
                           <Trash2 size={12} />
                         </button>
                       </div>
                     ))}
                   </>
                 )}
-                {presets.length === 0 && <p className="text-xs text-[--foreground-dim] py-2 text-center px-1">No saved presets yet</p>}
+                {presets.length === 0 && <p className="text-xs text-gray-500 py-2 text-center px-1">No saved presets yet</p>}
               </div>
             </div>
           </motion.div>
@@ -2120,7 +2120,7 @@ export default function MockupGenerator() {
       <div className="flex-1 flex flex-col min-h-0 relative z-10">
 
         {/* Studio tab bar */}
-        <div className="border-b border-[--border] bg-[--bg-raised] shrink-0">
+        <div className="border-b border-gray-700/50 bg-gray-900 shrink-0">
           <div className="px-4 md:px-6 flex items-center gap-0 overflow-x-auto">
             {STUDIO_TABS.map(tab => {
               const Icon = tab.icon;
@@ -2131,8 +2131,8 @@ export default function MockupGenerator() {
                   className={cn(
                     "flex items-center gap-2 px-4 py-3.5 text-sm font-medium transition-all duration-200 whitespace-nowrap border-b-2 -mb-px",
                     isActive
-                      ? "text-[--accent] border-[--accent]"
-                      : "text-[--foreground-muted] border-transparent hover:text-[--foreground] hover:border-[--border-light]"
+                      ? "text-indigo-400 border-indigo-400"
+                      : "text-gray-400 border-transparent hover:text-gray-100 hover:border-gray-700"
                   )}>
                   <Icon size={14} strokeWidth={2} />
                   {tab.label}
@@ -2145,15 +2145,15 @@ export default function MockupGenerator() {
             {/* Prompt richness bar */}
             <div className="hidden md:flex items-center gap-3 py-3 pr-1">
               <div className="w-24">
-                <div className="h-1 bg-[--bg-inset] rounded-full overflow-hidden">
+                <div className="h-1 bg-gray-950 rounded-full overflow-hidden">
                   <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-[--accent-dim] to-[--accent]"
+                    className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-indigo-400"
                     animate={{ width: `${completeness.score}%` }}
                     transition={{ duration: 0.4, ease: 'easeOut' }}
                   />
                 </div>
               </div>
-              <span className="text-xs font-semibold text-[--accent] shrink-0">{completeness.label}</span>
+              <span className="text-xs font-semibold text-indigo-400 shrink-0">{completeness.label}</span>
             </div>
           </div>
         </div>
@@ -2164,24 +2164,24 @@ export default function MockupGenerator() {
           {/* Options panel (left / scrollable) */}
           <div className="flex-1 overflow-y-auto">
             {/* Summary pills */}
-            <div className="px-4 md:px-6 py-4 border-b border-[--border] flex flex-wrap gap-1.5">
+            <div className="px-4 md:px-6 py-4 border-b border-gray-700/50 flex flex-wrap gap-1.5">
               {summaryPills.map(pill => (
                 <button key={pill.k}
                   onClick={() => resetPillValue(pill.k)}
-                  className="group flex items-center gap-1.5 px-2.5 py-1 bg-[--bg-surface] border border-[--border] rounded-full hover:border-[--border-accent] hover:bg-[--accent-subtle] transition-all duration-200">
-                  <span className="text-[10px] font-semibold text-[--foreground-dim] uppercase tracking-wide">{pill.k}</span>
-                  <span className="text-[12px] font-medium text-[--foreground-muted] group-hover:text-[--accent]">{pill.v}</span>
-                  <X size={8} className="text-[--foreground-dim] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  className="group flex items-center gap-1.5 px-2.5 py-1 bg-gray-800 border border-gray-700/50 rounded-full hover:border-indigo-400/25 hover:bg-indigo-500/10 transition-all duration-200">
+                  <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">{pill.k}</span>
+                  <span className="text-[12px] font-medium text-gray-400 group-hover:text-indigo-400">{pill.v}</span>
+                  <X size={8} className="text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
               ))}
               {config.swatchColors.length > 0 && (
                 <button
                   onClick={() => setConfig(prev => ({ ...prev, swatchColors: [] }))}
-                  className="group flex items-center gap-1 px-2.5 py-1 bg-[--bg-surface] border border-[--border] rounded-full hover:border-[--border-accent] hover:bg-[--accent-subtle] transition-all duration-200">
+                  className="group flex items-center gap-1 px-2.5 py-1 bg-gray-800 border border-gray-700/50 rounded-full hover:border-indigo-400/25 hover:bg-indigo-500/10 transition-all duration-200">
                   {config.swatchColors.map((c, i) => (
-                    <div key={i} className="w-3.5 h-3.5 rounded-full border border-[--border-light]" style={{ backgroundColor: c }} />
+                    <div key={i} className="w-3.5 h-3.5 rounded-full border border-gray-700" style={{ backgroundColor: c }} />
                   ))}
-                  <X size={8} className="text-[--foreground-dim] opacity-0 group-hover:opacity-100 transition-opacity ml-0.5" />
+                  <X size={8} className="text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity ml-0.5" />
                 </button>
               )}
             </div>
@@ -2203,7 +2203,7 @@ export default function MockupGenerator() {
             <div className="md:hidden px-4 pb-4">
               <button
                 onClick={() => setMobilePreviewOpen(true)}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[--accent-dim] text-white text-sm font-semibold hover:bg-[--accent] transition-all duration-200">
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-500 text-white text-sm font-semibold hover:bg-indigo-400 transition-all duration-200">
                 <Sparkles size={14} />
                 View Prompt
               </button>
@@ -2211,7 +2211,7 @@ export default function MockupGenerator() {
           </div>
 
           {/* Preview panel (right / desktop only) */}
-          <div className="hidden md:flex w-[380px] min-w-[380px] border-l border-[--border] bg-[--bg-raised] flex-col overflow-hidden">
+          <div className="hidden md:flex w-[380px] min-w-[380px] border-l border-gray-700/50 bg-gray-900 flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto p-5">
               <PromptPreview maxH="none" />
             </div>
@@ -2220,11 +2220,11 @@ export default function MockupGenerator() {
       </div>
 
       {/* Footer */}
-      <footer className="relative z-10 px-4 md:px-6 py-3.5 border-t border-[--border] bg-[--bg-raised] flex items-center justify-between gap-4">
-        <p className="text-[11px] text-[--foreground-dim] font-medium">
+      <footer className="relative z-10 px-4 md:px-6 py-3.5 border-t border-gray-700/50 bg-gray-900 flex items-center justify-between gap-4">
+        <p className="text-[11px] text-gray-500 font-medium">
           Built for design consistency by Benjamin Arnedo
         </p>
-        <p className="text-[11px] text-[--foreground-dim]/50 hidden md:block">
+        <p className="text-[11px] text-gray-500/50 hidden md:block">
           {OBJECTS.length} objects · {CAMERAS.length} angles · {SURFACES.length} surfaces · {LIGHTINGS.length} lights
         </p>
       </footer>
@@ -2241,12 +2241,12 @@ export default function MockupGenerator() {
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[--bg-raised] border-t border-[--border] rounded-t-3xl overflow-hidden"
+              className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-gray-900 border-t border-gray-700/50 rounded-t-3xl overflow-hidden"
               style={{ maxHeight: '80vh' }}>
-              <div className="p-4 border-b border-[--border] flex items-center justify-between">
-                <span className="text-sm font-semibold text-[--foreground]">Live Prompt</span>
+              <div className="p-4 border-b border-gray-700/50 flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-100">Live Prompt</span>
                 <button onClick={() => setMobilePreviewOpen(false)}
-                  className="p-2 rounded-xl text-[--foreground-muted] hover:text-[--foreground] hover:bg-[--bg-surface] transition-all">
+                  className="p-2 rounded-xl text-gray-400 hover:text-gray-100 hover:bg-gray-800 transition-all">
                   <X size={16} />
                 </button>
               </div>
