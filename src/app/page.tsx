@@ -1511,7 +1511,7 @@ export default function MockupGenerator() {
     return (
       <main className="min-h-screen bg-gray-950 text-gray-100 flex flex-col relative" style={{ fontFamily: SYSTEM_FONT }}>
         {/* Header */}
-        <header className="sticky top-0 z-30 glass border-b border-gray-700/50">
+        <header className="sticky top-0 z-30 bg-gray-950/95 backdrop-blur-sm border-b border-gray-700/50">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3.5 flex items-center gap-3">
             <div className="flex items-center gap-2.5 mr-2">
               <div className="w-7 h-7 rounded-xl bg-indigo-500 flex items-center justify-center">
@@ -1571,7 +1571,7 @@ export default function MockupGenerator() {
         </div>
 
         {/* Footer nav */}
-        <div className="sticky bottom-0 z-20 glass border-t border-gray-700/50">
+        <div className="sticky bottom-0 z-20 bg-gray-950/95 backdrop-blur-sm border-t border-gray-700/50">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3.5 flex items-center gap-3">
             <button
               onClick={goBack}
@@ -1966,7 +1966,7 @@ export default function MockupGenerator() {
     <main className="flex flex-col min-h-screen bg-gray-950 text-gray-100 relative" style={{ fontFamily: SYSTEM_FONT }}>
 
       {/* Top Nav Bar */}
-      <header className="sticky top-0 z-40 glass border-b border-gray-700/50">
+      <header className="sticky top-0 z-40 bg-gray-950/95 backdrop-blur-sm border-b border-gray-700/50">
         <div className="px-4 md:px-6 h-14 flex items-center gap-3">
           {/* Logo */}
           <div className="flex items-center gap-2.5 mr-4 shrink-0">
@@ -2042,7 +2042,7 @@ export default function MockupGenerator() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.18 }}
-            className="fixed top-14 right-4 z-50 w-80 glass border border-gray-700/50 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden">
+            className="fixed top-14 right-4 z-50 w-80 bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
             <div className="p-4 border-b border-gray-700/50">
               <div className="flex items-center gap-2 mb-3">
                 <input type="text" value={presetName}
@@ -2110,7 +2110,7 @@ export default function MockupGenerator() {
         {showPresetPanel && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-40 bg-black/40"
             onClick={() => setShowPresetPanel(false)}
           />
         )}
