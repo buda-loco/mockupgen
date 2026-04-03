@@ -34,6 +34,10 @@ export type ImageRatio = '1:1' | '4:5' | '4:3' | '3:2' | '16:9' | '21:9' | '9:16
 
 export type AssetInputType = 'transparent-logo' | 'screenshot' | 'design-custom';
 
+export type AssetRatioType =
+  | 'auto' | '1:1' | '3:2' | '2:3' | '4:3' | '3:4'
+  | '16:9' | '9:16' | '3:1' | '1:3' | '21:9' | 'custom';
+
 export type PropType =
   | 'coffee-cup' | 'plant' | 'pen-pencil' | 'glasses' | 'watch'
   | 'phone' | 'flowers' | 'fabric-swatch' | 'color-chips' | 'keyboard'
@@ -86,6 +90,8 @@ export interface MockupConfig {
   swatchColors: string[];
   imageRatio: ImageRatio;
   assetInput: AssetInputType;
+  assetRatio: AssetRatioType;
+  customAssetRatio: string;
   assetDimensions?: string;
   props: PropType[];
   hand: HandMode;
@@ -226,6 +232,21 @@ export const IMAGE_RATIOS = [
   { id: '21:9', label: 'Ultra Wide 21:9' },
   { id: '9:16', label: 'Vertical 9:16' },
   { id: '2:3', label: 'Tall 2:3' },
+] as const;
+
+export const ASSET_RATIOS = [
+  { id: 'auto', label: 'Auto (detect)' },
+  { id: '1:1', label: 'Square 1:1' },
+  { id: '3:2', label: 'Landscape 3:2' },
+  { id: '2:3', label: 'Portrait 2:3' },
+  { id: '4:3', label: 'Standard 4:3' },
+  { id: '3:4', label: 'Tall 3:4' },
+  { id: '16:9', label: 'Widescreen 16:9' },
+  { id: '9:16', label: 'Vertical 9:16' },
+  { id: '3:1', label: 'Banner 3:1' },
+  { id: '1:3', label: 'Tall Banner 1:3' },
+  { id: '21:9', label: 'Ultra Wide 21:9' },
+  { id: 'custom', label: 'Custom ratio' },
 ] as const;
 
 export const ASSET_INPUTS = [

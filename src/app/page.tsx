@@ -19,13 +19,13 @@ import { twMerge } from 'tailwind-merge';
 
 import {
   OBJECTS, CAMERAS, SURFACES, SETTINGS, LIGHTINGS, MATERIALS,
-  IMAGE_RATIOS, ASSET_INPUTS, PROPS, HANDS, SCREEN_EFFECTS,
+  IMAGE_RATIOS, ASSET_INPUTS, ASSET_RATIOS, PROPS, HANDS, SCREEN_EFFECTS,
   IMPERFECTIONS_UNIVERSAL, IMPERFECTIONS_SCREEN, IMPERFECTIONS_FABRIC,
   IMPERFECTIONS_PRINT, IMPERFECTIONS_HARD,
   PRINT_OBJECTS, FABRIC_OBJECTS, SCREEN_OBJECTS, SIGNAGE_OBJECTS,
   OBJECT_OPTIONS, getObjectDefaults,
   MockupConfig, ObjectType, CameraAngle, SurfaceType, SettingType,
-  LightingType, MaterialType, ImageRatio, AssetInputType, PropType,
+  LightingType, MaterialType, ImageRatio, AssetInputType, AssetRatioType, PropType,
   HandMode, ScreenEffectType, ImperfectionType, CustomAngle,
 } from '@/types/mockup';
 import { generateMockupPrompt } from '@/lib/prompt-engine';
@@ -442,7 +442,7 @@ const STUDIO_TABS: { id: StudioTabId; label: string; icon: React.ElementType }[]
   { id: 'camera',   label: 'Camera',   icon: Camera },
   { id: 'scene',    label: 'Scene',    icon: Sun },
   { id: 'lighting', label: 'Lighting', icon: Eye },
-  { id: 'style',    label: 'Style',    icon: Palette },
+  { id: 'style',    label: 'Input',    icon: FileImage },
   { id: 'extras',   label: 'Extras',   icon: Zap },
 ];
 
@@ -488,6 +488,8 @@ const DEFAULT_CONFIG: MockupConfig = {
   swatchColors: [],
   imageRatio: '4:3',
   assetInput: 'transparent-logo',
+  assetRatio: 'auto',
+  customAssetRatio: '',
   assetDimensions: '',
   props: [],
   hand: 'none',
@@ -632,7 +634,7 @@ const WIZARD_STEPS = [
   { id: 'camera',      title: 'How should it look?',          subtitle: 'Pick a frame ratio and camera angle.',                 icon: Camera },
   { id: 'environment', title: 'Set the scene.',               subtitle: 'Choose a surface and setting for your shot.',          icon: Sun },
   { id: 'lighting',    title: 'Light it up.',                 subtitle: 'Pick a lighting mood and intensity.',                  icon: Eye },
-  { id: 'style',       title: 'Define the look.',             subtitle: 'Colors, asset type, and brand description.',           icon: Palette },
+  { id: 'style',       title: 'Configure your input.',        subtitle: 'Asset type, proportions, colors, and brand.',          icon: FileImage },
   { id: 'extras',      title: 'Add some flair.',              subtitle: 'Optional props, hand, effects and imperfections.',     icon: Zap },
   { id: 'review',      title: 'Your prompt is ready.',        subtitle: 'Copy it and go create something beautiful.',           icon: Check },
 ] as const;
@@ -1365,6 +1367,28 @@ export default function MockupGenerator() {
           </div>
 
           <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-400">Input Asset Proportions</label>
+              <p className="text-xs text-gray-500 mt-1">Match the proportions of your attached image so it maps correctly without distortion.</p>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {ASSET_RATIOS.map(r => (
+                <TogglePill key={r.id} label={r.label} active={config.assetRatio === r.id}
+                  onClick={() => setConfig(prev => ({ ...prev, assetRatio: r.id as AssetRatioType }))} />
+              ))}
+            </div>
+            {config.assetRatio === 'custom' && (
+              <div className="space-y-2 pt-1">
+                <label className="text-xs font-medium text-gray-500">Custom ratio (e.g. 5:2, 7:3)</label>
+                <input type="text" value={config.customAssetRatio}
+                  onChange={e => setConfig(prev => ({ ...prev, customAssetRatio: e.target.value }))}
+                  placeholder="e.g. 5:2"
+                  className="w-full p-3 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
             <label className="text-sm font-medium text-gray-400">Color Swatches</label>
             <ColorSwatchesUI />
           </div>
@@ -1869,6 +1893,25 @@ export default function MockupGenerator() {
               <input type="text" value={config.assetDimensions}
                 onChange={e => setConfig(prev => ({ ...prev, assetDimensions: e.target.value }))}
                 placeholder="e.g. 1920x1080px, A4"
+                className="w-full p-2.5 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
+            )}
+          </div>
+
+          <div className="space-y-3 pt-2 border-t border-gray-700/50">
+            <div>
+              <p className="text-sm font-medium text-gray-400">Input Asset Proportions</p>
+              <p className="text-xs text-gray-500 mt-0.5">Match your attached image so it maps without distortion.</p>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {ASSET_RATIOS.map(r => (
+                <TogglePill key={r.id} label={r.label} active={config.assetRatio === r.id}
+                  onClick={() => setConfig(prev => ({ ...prev, assetRatio: r.id as AssetRatioType }))} />
+              ))}
+            </div>
+            {config.assetRatio === 'custom' && (
+              <input type="text" value={config.customAssetRatio}
+                onChange={e => setConfig(prev => ({ ...prev, customAssetRatio: e.target.value }))}
+                placeholder="e.g. 5:2"
                 className="w-full p-2.5 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
             )}
           </div>

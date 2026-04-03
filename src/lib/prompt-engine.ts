@@ -255,6 +255,15 @@ export function generateMockupPrompt(config: MockupConfig): string {
     parts.push(`The design dimensions are ${assetDimensions}.`);
   }
 
+  // Asset ratio / proportions
+  const { assetRatio, customAssetRatio } = config;
+  if (assetRatio && assetRatio !== 'auto') {
+    const ratioStr = assetRatio === 'custom' && customAssetRatio?.trim()
+      ? customAssetRatio.trim()
+      : assetRatio;
+    parts.push(`IMPORTANT — INPUT ASSET PROPORTIONS: The provided input asset has a ${ratioStr} aspect ratio. When placing this asset onto the mockup object, you MUST preserve this exact ${ratioStr} proportion. Scale the asset uniformly to fit the mockup surface — do NOT stretch, squeeze, or crop it to fill a different shape. If the mockup surface has different proportions, the asset should be centered with appropriate margins rather than distorted to fit.`);
+  }
+
   // CRITICAL: Asset preservation instructions
   parts.push("CRITICAL INSTRUCTION — ASSET FIDELITY: The attached/referenced image or design asset MUST be reproduced with absolute pixel-level accuracy. DO NOT alter, redraw, regenerate, distort, warp, stretch, compress, or reinterpret ANY part of the provided asset. ALL text in the asset must remain EXACTLY as written — same words, same spelling, same font, same size, same spacing, same capitalization. DO NOT invent new text, change existing text, add text that is not in the original, or render text in a different language. ALL proportions, aspect ratios, and spatial relationships within the asset must be preserved EXACTLY — no stretching, squishing, cropping, or geometric distortion of any kind. The asset should be applied to the mockup surface using correct perspective mapping only, as if it were a real printed/displayed piece photographed in the scene. Treat the provided asset as a sacred, unmodifiable reference that must appear in the final image exactly as supplied.");
 
