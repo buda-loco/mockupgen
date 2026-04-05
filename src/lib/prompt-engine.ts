@@ -195,123 +195,128 @@ const IMPERFECTION_PROMPTS: Record<string, string> = {
   'chipped-edge': "A minuscule chip on one edge of the hard surface, an almost imperceptible detail that sells realism.",
 };
 
-export function generateMockupPrompt(config: MockupConfig): string {
+export interface PromptSegment {
+  label: string;
+  text: string;
+}
+
+export interface StructuredPrompt {
+  segments: PromptSegment[];
+  fullText: string;
+}
+
+export function generateMockupPrompt(config: MockupConfig): StructuredPrompt {
   const {
     object, camera, customAngle, surface, setting, lighting, intensity,
     material, assetDescription, colorPalette, imageRatio, assetInput,
     assetDimensions, props, hand, screenEffects, imperfections, infiniteBackground, infiniteBgColor,
   } = config;
 
-  const parts: string[] = [];
+  const segments: PromptSegment[] = [];
+  const add = (label: string, text: string) => { segments.push({ label, text }); };
 
   // Core style
-  parts.push(CORE_STYLE);
+  add('Style', CORE_STYLE);
 
   // Image ratio
-  parts.push(RATIO_PROMPTS[imageRatio]);
+  add('Ratio', RATIO_PROMPTS[imageRatio]);
 
   // Object
-  parts.push(OBJECT_PROMPTS[object]);
-
-  // Object-specific details
+  const objectTexts: string[] = [OBJECT_PROMPTS[object]];
   const objDefs = OBJECT_OPTIONS[object] ?? [];
   if (objDefs.length > 0) {
     const fragments = objDefs.map(def => {
       const selectedId = config.objectDetails?.[def.key] ?? def.default;
       return def.choices.find(c => c.id === selectedId)?.prompt ?? '';
     }).filter(Boolean);
-    if (fragments.length > 0) parts.push(fragments.join(', ') + '.');
+    if (fragments.length > 0) objectTexts.push(fragments.join(', ') + '.');
   }
+  add('Object', objectTexts.join(' '));
 
   // Camera angle
   if (camera === 'custom' && customAngle) {
-    parts.push(customAngleToPrompt(customAngle));
+    add('Camera', customAngleToPrompt(customAngle));
   } else if (camera !== 'custom') {
-    parts.push(CAMERA_PROMPTS[camera]);
+    add('Camera', CAMERA_PROMPTS[camera]);
   }
 
-  // Infinite background OR surface + setting
+  // Environment: infinite background OR surface + setting
   if (infiniteBackground) {
     const colorDesc = infiniteBgColor && infiniteBgColor !== '#ffffff'
       ? `in ${infiniteBgColor} tone`
       : 'in a clean neutral tone';
-    parts.push(`The subject floats on a seamless infinite background ${colorDesc}, with no visible horizon line, edges, or surface boundaries. Pure, endless backdrop extending in all directions.`);
+    add('Environment', `The subject floats on a seamless infinite background ${colorDesc}, with no visible horizon line, edges, or surface boundaries. Pure, endless backdrop extending in all directions.`);
   } else {
-    parts.push(`The subject is ${SURFACE_PROMPTS[surface]}.`);
-    parts.push(SETTING_PROMPTS[setting]);
+    add('Environment', `The subject is ${SURFACE_PROMPTS[surface]}. ${SETTING_PROMPTS[setting]}`);
   }
 
   // Lighting
-  parts.push(`Lighting: ${LIGHTING_PROMPTS[lighting]} Shadow intensity at ${intensity}%.`);
+  add('Lighting', `Lighting: ${LIGHTING_PROMPTS[lighting]} Shadow intensity at ${intensity}%.`);
 
   // Material (only for print/packaging objects)
   if (PRINT_OBJECTS.includes(object)) {
-    parts.push(`Material finish: ${MATERIAL_PROMPTS[material]}.`);
+    add('Material', `Material finish: ${MATERIAL_PROMPTS[material]}.`);
   }
 
-  // Asset input type
-  parts.push(ASSET_INPUT_PROMPTS[assetInput]);
+  // Asset input type + ratio + fidelity
+  const assetTexts: string[] = [ASSET_INPUT_PROMPTS[assetInput]];
   if (assetInput === 'design-custom' && assetDimensions) {
-    parts.push(`The design dimensions are ${assetDimensions}.`);
+    assetTexts.push(`The design dimensions are ${assetDimensions}.`);
   }
-
-  // Asset ratio / proportions
   const { assetRatio, customAssetRatio } = config;
   if (assetRatio && assetRatio !== 'auto') {
     const ratioStr = assetRatio === 'custom' && customAssetRatio?.trim()
       ? customAssetRatio.trim()
       : assetRatio;
-    parts.push(`IMPORTANT — INPUT ASSET PROPORTIONS: The provided input asset has a ${ratioStr} aspect ratio. When placing this asset onto the mockup object, you MUST preserve this exact ${ratioStr} proportion. Scale the asset uniformly to fit the mockup surface — do NOT stretch, squeeze, or crop it to fill a different shape. If the mockup surface has different proportions, the asset should be centered with appropriate margins rather than distorted to fit.`);
+    assetTexts.push(`IMPORTANT — INPUT ASSET PROPORTIONS: The provided input asset has a ${ratioStr} aspect ratio. When placing this asset onto the mockup object, you MUST preserve this exact ${ratioStr} proportion. Scale the asset uniformly to fit the mockup surface — do NOT stretch, squeeze, or crop it to fill a different shape. If the mockup surface has different proportions, the asset should be centered with appropriate margins rather than distorted to fit.`);
   }
-
-  // CRITICAL: Asset preservation instructions
-  parts.push("CRITICAL INSTRUCTION — ASSET FIDELITY: The attached/referenced image or design asset MUST be reproduced with absolute pixel-level accuracy. DO NOT alter, redraw, regenerate, distort, warp, stretch, compress, or reinterpret ANY part of the provided asset. ALL text in the asset must remain EXACTLY as written — same words, same spelling, same font, same size, same spacing, same capitalization. DO NOT invent new text, change existing text, add text that is not in the original, or render text in a different language. ALL proportions, aspect ratios, and spatial relationships within the asset must be preserved EXACTLY — no stretching, squishing, cropping, or geometric distortion of any kind. The asset should be applied to the mockup surface using correct perspective mapping only, as if it were a real printed/displayed piece photographed in the scene. Treat the provided asset as a sacred, unmodifiable reference that must appear in the final image exactly as supplied.");
-
-  // Asset description
+  assetTexts.push("CRITICAL INSTRUCTION — ASSET FIDELITY: The attached/referenced image or design asset MUST be reproduced with absolute pixel-level accuracy. DO NOT alter, redraw, regenerate, distort, warp, stretch, compress, or reinterpret ANY part of the provided asset. ALL text in the asset must remain EXACTLY as written — same words, same spelling, same font, same size, same spacing, same capitalization. DO NOT invent new text, change existing text, add text that is not in the original, or render text in a different language. ALL proportions, aspect ratios, and spatial relationships within the asset must be preserved EXACTLY — no stretching, squishing, cropping, or geometric distortion of any kind. The asset should be applied to the mockup surface using correct perspective mapping only, as if it were a real printed/displayed piece photographed in the scene. Treat the provided asset as a sacred, unmodifiable reference that must appear in the final image exactly as supplied.");
   if (assetDescription) {
-    parts.push(`The design features ${assetDescription}.`);
+    assetTexts.push(`The design features ${assetDescription}.`);
   } else {
-    parts.push('The design features a minimalist abstract logo with clean typography.');
+    assetTexts.push('The design features a minimalist abstract logo with clean typography.');
   }
+  add('Asset', assetTexts.join(' '));
 
-  // Props
+  // Details: props, hand, screen effects, imperfections
+  const detailTexts: string[] = [];
   if (props.length > 0) {
     const propList = props.map(p => PROP_PROMPTS[p]).join(', ');
-    parts.push(`Accompanying props arranged tastefully nearby: ${propList}. Props are secondary to the hero object, adding editorial context without competing for attention.`);
+    detailTexts.push(`Accompanying props arranged tastefully nearby: ${propList}. Props are secondary to the hero object, adding editorial context without competing for attention.`);
   }
-
-  // Hand
   if (hand !== 'none') {
-    parts.push(HAND_PROMPTS[hand]);
+    detailTexts.push(HAND_PROMPTS[hand]);
   }
-
-  // Screen effects (only for screen-based objects)
   if (SCREEN_OBJECTS.includes(object) && screenEffects.length > 0) {
-    const effects = screenEffects.map(e => SCREEN_EFFECT_PROMPTS[e]).join(' ');
-    parts.push(effects);
+    detailTexts.push(screenEffects.map(e => SCREEN_EFFECT_PROMPTS[e]).join(' '));
   }
-
-  // Imperfections
   if (imperfections.length > 0) {
     const imperfTexts = imperfections.map(i => IMPERFECTION_PROMPTS[i]).filter(Boolean);
-    parts.push(`Subtle realistic imperfections for authenticity: ${imperfTexts.join(' ')}`);
+    detailTexts.push(`Subtle realistic imperfections for authenticity: ${imperfTexts.join(' ')}`);
+  }
+  if (detailTexts.length > 0) {
+    add('Details', detailTexts.join(' '));
   }
 
   // Color palette
+  const colorTexts: string[] = [];
   const { swatchColors } = config;
   if (swatchColors.length > 0) {
-    const hexList = swatchColors.join(', ');
-    parts.push(`Color palette defined by exact hex values: ${hexList}. These colors should dominate the scene's brand elements and overall tone.`);
+    colorTexts.push(`Color palette defined by exact hex values: ${swatchColors.join(', ')}. These colors should dominate the scene's brand elements and overall tone.`);
   }
   if (colorPalette) {
-    parts.push(`Color mood: ${colorPalette}.`);
+    colorTexts.push(`Color mood: ${colorPalette}.`);
   }
   if (swatchColors.length === 0 && !colorPalette) {
-    parts.push('Neutral color palette of warm off-whites and soft grays.');
+    colorTexts.push('Neutral color palette of warm off-whites and soft grays.');
   }
+  add('Colors', colorTexts.join(' '));
 
   // Render suffix
-  parts.push("Unreal Engine 5 render style, photorealistic, 8k, ray tracing, global illumination.");
+  add('Render', "Unreal Engine 5 render style, photorealistic, 8k, ray tracing, global illumination.");
 
-  return parts.join(" ");
+  return {
+    segments,
+    fullText: segments.map(s => s.text).join(' '),
+  };
 }

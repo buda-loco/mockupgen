@@ -28,7 +28,7 @@ import {
   LightingType, MaterialType, ImageRatio, AssetInputType, AssetRatioType, PropType,
   HandMode, ScreenEffectType, ImperfectionType, CustomAngle,
 } from '@/types/mockup';
-import { generateMockupPrompt } from '@/lib/prompt-engine';
+import { generateMockupPrompt, type StructuredPrompt } from '@/lib/prompt-engine';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -356,18 +356,205 @@ function TogglePill({ label, active, onClick, icon: Icon }: {
   );
 }
 
+// ── Color Swatches UI ────────────────────────────────────────────────────────
+
+function ColorSwatchesUI({ colors, onUpdate, onRemove, onAdd, onClear, onExtract, extracting, fileInputRef }: {
+  colors: string[];
+  onUpdate: (i: number, hex: string) => void;
+  onRemove: (i: number) => void;
+  onAdd: (hex: string) => void;
+  onClear: () => void;
+  onExtract: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  extracting: boolean;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        {colors.map((color, i) => (
+          <div key={i} className="relative group">
+            <label className="block w-11 h-11 rounded-xl border-2 border-gray-700/50 cursor-pointer overflow-hidden hover:border-indigo-400 transition-colors"
+              style={{ backgroundColor: color }}>
+              <input type="color" value={color}
+                onChange={e => onUpdate(i, e.target.value)}
+                className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
+            </label>
+            <button onClick={() => onRemove(i)} aria-label="Remove color"
+              className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-400 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <X size={8} strokeWidth={3} />
+            </button>
+            <span className="block text-[9px] font-mono text-gray-500 text-center mt-1 leading-none">{color}</span>
+          </div>
+        ))}
+        {colors.length < 5 && (
+          <label className="relative w-11 h-11 rounded-xl border-2 border-dashed border-gray-700/50 cursor-pointer flex items-center justify-center hover:border-indigo-400 transition-colors">
+            <Plus size={14} className="text-gray-500" />
+            <input type="color" value="#818CF8"
+              onChange={e => onAdd(e.target.value)}
+              className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
+          </label>
+        )}
+      </div>
+      <input ref={fileInputRef} type="file" accept="image/*" onChange={onExtract} className="hidden" />
+      <button onClick={() => fileInputRef.current?.click()} disabled={extracting}
+        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-gray-700/50 text-sm font-medium transition-all duration-200 bg-gray-800 text-gray-400 hover:border-gray-700 hover:bg-gray-700">
+        {extracting ? (
+          <><div className="w-3 h-3 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" /><span>Extracting\u2026</span></>
+        ) : (
+          <><ImagePlus size={14} /><span>Extract from Image</span></>
+        )}
+      </button>
+      <p className="text-[11px] text-gray-500">100% local — never uploaded.</p>
+      {colors.length > 0 && (
+        <button onClick={onClear}
+          className="text-[12px] font-medium text-gray-500 hover:text-indigo-400 transition-colors flex items-center gap-1">
+          <RotateCcw size={10} /> Clear colors
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ── Mode Switcher ────────────────────────────────────────────────────────────
+
+function ModeSwitcher({ compact = false, uiMode, onWizard, onStudio }: {
+  compact?: boolean;
+  uiMode: 'wizard' | 'studio';
+  onWizard: () => void;
+  onStudio: () => void;
+}) {
+  return (
+    <div className={cn(
+      "flex items-center rounded-xl border border-gray-700/50 overflow-hidden bg-gray-800",
+      compact && "text-[12px]"
+    )}>
+      <button
+        onClick={onWizard}
+        className={cn(
+          "flex items-center gap-1.5 px-3 py-2 transition-all duration-200 font-semibold",
+          compact ? "text-[11px] px-2.5 py-1.5" : "text-[13px]",
+          uiMode === 'wizard'
+            ? "bg-indigo-500/10 text-indigo-400"
+            : "text-gray-500 hover:text-gray-100"
+        )}>
+        <Wand2 size={compact ? 11 : 13} />
+        {!compact && 'Wizard'}
+      </button>
+      <button
+        onClick={onStudio}
+        className={cn(
+          "flex items-center gap-1.5 px-3 py-2 transition-all duration-200 font-semibold",
+          compact ? "text-[11px] px-2.5 py-1.5" : "text-[13px]",
+          uiMode === 'studio'
+            ? "bg-indigo-500/10 text-indigo-400"
+            : "text-gray-500 hover:text-gray-100"
+        )}>
+        <LayoutGrid size={compact ? 11 : 13} />
+        {!compact && 'Studio'}
+      </button>
+    </div>
+  );
+}
+
+// ── Prompt Preview Panel ─────────────────────────────────────────────────────
+
+function PromptPreview({ maxH = '70vh', segments, wordCount, completeness, copyFormat, setCopyFormat, onCopy, copied }: {
+  maxH?: string;
+  segments: { label: string; text: string }[];
+  wordCount: number;
+  completeness: { score: number; label: string };
+  copyFormat: 'text' | 'json';
+  setCopyFormat: (f: 'text' | 'json') => void;
+  onCopy: () => void;
+  copied: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-gray-700/50 bg-gray-800 overflow-hidden flex flex-col" style={{ maxHeight: maxH }}>
+      {/* Header */}
+      <div className="px-5 py-3.5 border-b border-gray-700/50 flex items-center gap-2.5 shrink-0">
+        <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+        <span className="text-xs font-semibold text-indigo-400 tracking-wide">Live Prompt</span>
+        <div className="flex-1" />
+        <div className="flex items-center gap-2">
+          <span className={cn("text-xs font-mono", wordCount > 500 ? "text-amber-400" : "text-gray-500")}>
+            {wordCount}w
+            {wordCount > 500 && <span className="text-[9px] ml-1" title="Most AI image tools truncate long prompts. Midjourney: ~60 words, DALL-E: ~400 chars.">long</span>}
+          </span>
+          <div className="flex gap-1">
+            {['8K', 'UE5'].map(tag => (
+              <span key={tag} className="px-1.5 py-0.5 bg-gray-950 text-[9px] font-bold text-gray-500 rounded-md border border-gray-700/50 uppercase tracking-wider">{tag}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+      {/* Completeness bar */}
+      <div className="px-5 py-2 border-b border-gray-700/50 shrink-0">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[10px] font-medium text-gray-500 uppercase tracking-widest">Richness</span>
+          <span className="text-xs font-semibold text-indigo-400">{completeness.label} · {completeness.score}%</span>
+        </div>
+        <div className="h-1 bg-gray-950 rounded-full overflow-hidden">
+          <motion.div
+            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-indigo-400"
+            animate={{ width: `${completeness.score}%` }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+          />
+        </div>
+      </div>
+      {/* Segments */}
+      <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
+        {segments.map((seg, i) => (
+          <div key={i}>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 block mb-1.5">{seg.label}</span>
+            <p className="text-[13px] leading-relaxed text-gray-400">{seg.text}</p>
+          </div>
+        ))}
+      </div>
+      {/* Copy footer */}
+      <div className="p-4 border-t border-gray-700/50 shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-xl border border-gray-700/50 overflow-hidden bg-gray-950 text-[11px]">
+            <button onClick={() => setCopyFormat('text')}
+              className={cn("px-3 py-1.5 font-bold transition-all duration-200", copyFormat === 'text' ? "bg-indigo-500/10 text-indigo-400" : "text-gray-500 hover:text-gray-100")}>
+              Text
+            </button>
+            <button onClick={() => setCopyFormat('json')}
+              className={cn("px-3 py-1.5 font-bold transition-all duration-200 flex items-center gap-1", copyFormat === 'json' ? "bg-indigo-500/10 text-indigo-400" : "text-gray-500 hover:text-gray-100")}>
+              <Braces size={10} /> JSON
+            </button>
+          </div>
+          <button onClick={onCopy}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
+              copied
+                ? "bg-green-400/15 text-green-400 border border-green-400/25"
+                : "bg-indigo-500 text-white hover:bg-indigo-400"
+            )}>
+            {copied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Color extraction ─────────────────────────────────────────────────────────
 
 function extractColorsFromImage(file: File, count: number): Promise<string[]> {
   return new Promise((resolve) => {
     const img = new Image();
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src);
+      resolve([]);
+    };
     img.onload = () => {
       const canvas = document.createElement('canvas');
       const maxDim = 150;
       const scale = Math.min(maxDim / img.width, maxDim / img.height, 1);
       canvas.width = Math.round(img.width * scale);
       canvas.height = Math.round(img.height * scale);
-      const ctx = canvas.getContext('2d')!;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { resolve([]); URL.revokeObjectURL(img.src); return; }
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
       const pixels: [number, number, number][] = [];
@@ -499,6 +686,91 @@ const DEFAULT_CONFIG: MockupConfig = {
   infiniteBgColor: '#ffffff',
 };
 
+// ── URL state encoding (delta-compressed) ───────────────────────────────────
+
+function configToHash(config: MockupConfig): string {
+  // Only encode fields that differ from defaults (delta encoding)
+  const delta: Record<string, unknown> = {};
+  const d = DEFAULT_CONFIG;
+  if (config.object !== d.object) delta.o = config.object;
+  if (config.camera !== d.camera) delta.c = config.camera;
+  if (config.customAngle) delta.ca = config.customAngle;
+  if (config.surface !== d.surface) delta.s = config.surface;
+  if (config.setting !== d.setting) delta.st = config.setting;
+  if (config.lighting !== d.lighting) delta.l = config.lighting;
+  if (config.intensity !== d.intensity) delta.i = config.intensity;
+  if (config.material !== d.material) delta.m = config.material;
+  if (config.imageRatio !== d.imageRatio) delta.r = config.imageRatio;
+  if (config.assetInput !== d.assetInput) delta.ai = config.assetInput;
+  if (config.assetRatio !== d.assetRatio) delta.ar = config.assetRatio;
+  if (config.customAssetRatio) delta.car = config.customAssetRatio;
+  if (config.assetDimensions) delta.ad = config.assetDimensions;
+  if (config.assetDescription) delta.desc = config.assetDescription;
+  if (config.colorPalette !== d.colorPalette) delta.cp = config.colorPalette;
+  if (config.swatchColors.length > 0) delta.sw = config.swatchColors;
+  if (config.props.length > 0) delta.p = config.props;
+  if (config.hand !== d.hand) delta.h = config.hand;
+  if (config.screenEffects.length > 0) delta.fx = config.screenEffects;
+  if (config.imperfections.length > 0) delta.imp = config.imperfections;
+  if (config.infiniteBackground) delta.ib = true;
+  if (config.infiniteBgColor !== d.infiniteBgColor) delta.ibc = config.infiniteBgColor;
+  // Object details: only store non-default values
+  const objDefs = OBJECT_OPTIONS[config.object] ?? [];
+  const detailDelta: Record<string, string> = {};
+  for (const def of objDefs) {
+    const val = config.objectDetails[def.key];
+    if (val && val !== def.default) detailDelta[def.key] = val;
+  }
+  if (Object.keys(detailDelta).length > 0) delta.od = detailDelta;
+
+  if (Object.keys(delta).length === 0) return '';
+  try {
+    return btoa(JSON.stringify(delta));
+  } catch {
+    return '';
+  }
+}
+
+function hashToConfig(hash: string): MockupConfig | null {
+  if (!hash) return null;
+  try {
+    const delta = JSON.parse(atob(hash));
+    if (typeof delta !== 'object' || delta === null) return null;
+    const obj = (delta.o ?? DEFAULT_CONFIG.object) as ObjectType;
+    const baseDetails = getObjectDefaults(obj);
+    const detailDelta = delta.od as Record<string, string> | undefined;
+    const objectDetails = detailDelta ? { ...baseDetails, ...detailDelta } : baseDetails;
+    return {
+      ...DEFAULT_CONFIG,
+      object: obj,
+      objectDetails,
+      camera: delta.c ?? DEFAULT_CONFIG.camera,
+      customAngle: delta.ca ?? null,
+      surface: delta.s ?? DEFAULT_CONFIG.surface,
+      setting: delta.st ?? DEFAULT_CONFIG.setting,
+      lighting: delta.l ?? DEFAULT_CONFIG.lighting,
+      intensity: delta.i ?? DEFAULT_CONFIG.intensity,
+      material: delta.m ?? DEFAULT_CONFIG.material,
+      imageRatio: delta.r ?? DEFAULT_CONFIG.imageRatio,
+      assetInput: delta.ai ?? DEFAULT_CONFIG.assetInput,
+      assetRatio: delta.ar ?? DEFAULT_CONFIG.assetRatio,
+      customAssetRatio: delta.car ?? '',
+      assetDimensions: delta.ad ?? '',
+      assetDescription: delta.desc ?? '',
+      colorPalette: delta.cp ?? DEFAULT_CONFIG.colorPalette,
+      swatchColors: delta.sw ?? [],
+      props: delta.p ?? [],
+      hand: delta.h ?? DEFAULT_CONFIG.hand,
+      screenEffects: delta.fx ?? [],
+      imperfections: delta.imp ?? [],
+      infiniteBackground: delta.ib ?? false,
+      infiniteBgColor: delta.ibc ?? DEFAULT_CONFIG.infiniteBgColor,
+    };
+  } catch {
+    return null;
+  }
+}
+
 // ── Section modified detection ───────────────────────────────────────────────
 
 function getSectionModified(sectionId: SectionId, config: MockupConfig): boolean {
@@ -571,60 +843,6 @@ const BUILT_IN_PRESETS: SavedPreset[] = [
   { name: 'Exhibition Stand Event', config: { ...DEFAULT_CONFIG, object: 'exhibition-stand', camera: 'three-quarter', surface: 'concrete', setting: 'urban', lighting: 'clean-studio', imageRatio: '16:9' }, createdAt: 0 },
 ];
 
-// ── Structured prompt segments ───────────────────────────────────────────────
-
-function getPromptSegments(config: MockupConfig): { label: string; text: string }[] {
-  const fullPrompt = generateMockupPrompt(config);
-  const parts = fullPrompt.split('. ').filter(s => s.trim().length > 0);
-
-  const grouped: { label: string; texts: string[] }[] = [
-    { label: 'Style', texts: [] },
-    { label: 'Ratio', texts: [] },
-    { label: 'Object', texts: [] },
-    { label: 'Camera', texts: [] },
-    { label: 'Environment', texts: [] },
-    { label: 'Lighting', texts: [] },
-    { label: 'Material & Asset', texts: [] },
-    { label: 'Details', texts: [] },
-    { label: 'Colors', texts: [] },
-    { label: 'Render', texts: [] },
-  ];
-
-  for (const part of parts) {
-    const p = part.trim();
-    if (!p) continue;
-    if (p.includes('Hasselblad') || p.includes('megapixels') || p.includes('editorial lighting')) {
-      grouped[0].texts.push(p);
-    } else if (p.includes('aspect ratio') || p.includes('portrait') || p.includes('landscape') || p.includes('Square 1:1') || p.includes('Ultra-wide') || p.includes('Vertical 9:16') || p.includes('Classic 4:3') || p.includes('Standard 3:2') || p.includes('Tall 2:3') || p.includes('Cinematic wide')) {
-      grouped[1].texts.push(p);
-    } else if (p.includes('Shot from') || p.includes('Captured at') || p.includes('photographed from') || p.includes('Camera positioned') || p.includes('eye level') || p.includes('Extreme macro') || p.includes('isometric') || p.includes('Dutch tilt')) {
-      grouped[3].texts.push(p);
-    } else if (p.includes('floats on a seamless') || p.includes('The subject is') || p.includes('Set in') || p.includes('Set on') || p.includes('Set among') || p.includes('Set against')) {
-      grouped[4].texts.push(p);
-    } else if (p.startsWith('Lighting:') || p.includes('lighting') && p.includes('Shadow intensity')) {
-      grouped[5].texts.push(p);
-    } else if (p.startsWith('Material finish') || p.startsWith('The provided asset') || p.includes('dimensions:')) {
-      grouped[6].texts.push(p);
-    } else if (p.includes('hand') || p.includes('Hand') || p.includes('Screen effect') || p.includes('reflection') || p.includes('glare') || p.includes('light leak') || p.includes('prop') || p.startsWith('Subtle imperfection') || p.startsWith('Photographic imperfection') || p.includes('Wear and imperfection')) {
-      grouped[7].texts.push(p);
-    } else if (p.includes('Color palette') || p.includes('swatch') || p.includes('#') || p.includes('hex')) {
-      grouped[8].texts.push(p);
-    } else if (p.includes('Unreal Engine') || p.includes('8K') || p.includes('ray tracing') || p.includes('photorealistic render') || p.includes('photorealism')) {
-      grouped[9].texts.push(p);
-    } else {
-      grouped[2].texts.push(p);
-    }
-  }
-
-  return grouped
-    .filter(g => g.texts.length > 0)
-    .map(g => ({
-      label: g.label,
-      text: g.texts.join('. ').replace(/\.\s*\.$/, '.') + (g.texts.join('').endsWith('.') ? '' : '.'),
-    }))
-    .filter(s => s.text.trim().length > 2);
-}
-
 // ── Wizard steps ─────────────────────────────────────────────────────────────
 
 const WIZARD_STEPS = [
@@ -667,13 +885,33 @@ export default function MockupGenerator() {
   const [showPresetPanel, setShowPresetPanel] = useState(false);
   const [presetSaved, setPresetSaved] = useState(false);
 
-  useEffect(() => { setPresets(loadPresets()); }, []);
+  // Load initial state from URL hash, presets, and preferences
   useEffect(() => {
+    setPresets(loadPresets());
     try {
       const saved = localStorage.getItem(UI_MODE_KEY) as 'wizard' | 'studio' | null;
       if (saved === 'wizard' || saved === 'studio') setUiMode(saved);
     } catch { /* ignore */ }
+    // Restore config from URL hash
+    const hash = window.location.hash.slice(1);
+    if (hash) {
+      const restored = hashToConfig(hash);
+      if (restored) {
+        setConfig(restored);
+        setWizardStep(1); // Skip presets step when loading from URL
+      }
+    }
   }, []);
+
+  // Sync URL hash on config change (debounced)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const hash = configToHash(config);
+      const newUrl = hash ? `#${hash}` : window.location.pathname;
+      window.history.replaceState(null, '', newUrl);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [config]);
 
   useEffect(() => {
     try { localStorage.setItem(UI_MODE_KEY, uiMode); } catch { /* ignore */ }
@@ -703,41 +941,31 @@ export default function MockupGenerator() {
     savePresetsToStorage(updated);
   };
 
-  const generatedPrompt = useMemo(() => generateMockupPrompt(config), [config]);
+  const structuredPrompt = useMemo(() => generateMockupPrompt(config), [config]);
+  const generatedPrompt = structuredPrompt.fullText;
+  const promptSegments = structuredPrompt.segments;
   const completeness = useMemo(() => getPromptCompleteness(config), [config]);
   const wordCount = useMemo(() => generatedPrompt.split(/\s+/).length, [generatedPrompt]);
-  const promptSegments = useMemo(() => getPromptSegments(config), [config]);
 
-  const toggleProp = (id: PropType) => {
-    setConfig(prev => ({
-      ...prev,
-      props: prev.props.includes(id) ? prev.props.filter(p => p !== id) : [...prev.props, id],
-    }));
+  const toggleArrayField = <T,>(field: 'props' | 'screenEffects' | 'imperfections', id: T) => {
+    setConfig(prev => {
+      const arr = prev[field] as T[];
+      return { ...prev, [field]: arr.includes(id) ? arr.filter(v => v !== id) : [...arr, id] };
+    });
   };
+  const toggleProp = (id: PropType) => toggleArrayField('props', id);
+  const toggleScreenEffect = (id: ScreenEffectType) => toggleArrayField('screenEffects', id);
+  const toggleImperfection = (id: ImperfectionType) => toggleArrayField('imperfections', id);
 
-  const toggleScreenEffect = (id: ScreenEffectType) => {
-    setConfig(prev => ({
-      ...prev,
-      screenEffects: prev.screenEffects.includes(id) ? prev.screenEffects.filter(e => e !== id) : [...prev.screenEffects, id],
-    }));
-  };
-
-  const toggleImperfection = (id: ImperfectionType) => {
-    setConfig(prev => ({
-      ...prev,
-      imperfections: prev.imperfections.includes(id) ? prev.imperfections.filter(i => i !== id) : [...prev.imperfections, id],
-    }));
-  };
-
-  const availableImperfections = [
+  const availableImperfections = useMemo(() => [
     ...IMPERFECTIONS_UNIVERSAL,
     ...(SCREEN_OBJECTS.includes(config.object) ? IMPERFECTIONS_SCREEN : []),
     ...(FABRIC_OBJECTS.includes(config.object) ? IMPERFECTIONS_FABRIC : []),
     ...(PRINT_OBJECTS.includes(config.object) ? IMPERFECTIONS_PRINT : []),
     ...((!SCREEN_OBJECTS.includes(config.object) && !FABRIC_OBJECTS.includes(config.object) && !PRINT_OBJECTS.includes(config.object) && !SIGNAGE_OBJECTS.includes(config.object)) ? IMPERFECTIONS_HARD : []),
-  ];
+  ], [config.object]);
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     let text = generatedPrompt;
     if (copyFormat === 'json') {
       const obj: Record<string, unknown> = {
@@ -762,7 +990,19 @@ export default function MockupGenerator() {
       };
       text = JSON.stringify(obj, null, 2);
     }
-    navigator.clipboard.writeText(text);
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Fallback: textarea copy for browsers that deny clipboard permission
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -880,151 +1120,407 @@ export default function MockupGenerator() {
     }
   };
 
-  // ── Color swatches UI ────────────────────────────────────────────────────
+  // Shared component props
+  const colorSwatchProps = {
+    colors: config.swatchColors,
+    onUpdate: updateSwatchColor,
+    onRemove: removeSwatchColor,
+    onAdd: addSwatchColor,
+    onClear: () => setConfig(prev => ({ ...prev, swatchColors: [] })),
+    onExtract: handleImageExtract,
+    extracting,
+    fileInputRef,
+  };
 
-  const ColorSwatchesUI = () => (
+  const promptPreviewProps = {
+    segments: promptSegments,
+    wordCount,
+    completeness,
+    copyFormat,
+    setCopyFormat,
+    onCopy: handleCopy,
+    copied,
+  };
+
+  const modeSwitcherProps = {
+    uiMode,
+    onWizard: () => { setUiMode('wizard'); setWizardStep(0); },
+    onStudio: () => setUiMode('studio'),
+  };
+
+  // ── Shared section renderers ─────────────────────────────────────────────
+
+  const sectionCls = (compact: boolean): string =>
+    compact ? "space-y-3 pt-2 border-t border-gray-700/50" : "rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4";
+  const cardCls = (compact: boolean): string =>
+    compact ? "space-y-3" : "rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4";
+  const gapCls = (compact: boolean) => compact ? "gap-1.5" : "gap-2";
+
+  const renderObjectSelector = (compact = false) => (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 flex-wrap">
-        {config.swatchColors.map((color, i) => (
-          <div key={i} className="relative group">
-            <label className="block w-11 h-11 rounded-xl border-2 border-gray-700/50 cursor-pointer overflow-hidden hover:border-indigo-400 transition-colors"
-              style={{ backgroundColor: color }}>
-              <input type="color" value={color}
-                onChange={e => updateSwatchColor(i, e.target.value)}
-                className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
-            </label>
-            <button onClick={() => removeSwatchColor(i)}
-              className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-400 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <X size={8} strokeWidth={3} />
-            </button>
-            <span className="block text-[9px] font-mono text-gray-500 text-center mt-1 leading-none">{color}</span>
-          </div>
-        ))}
-        {config.swatchColors.length < 5 && (
-          <label className="relative w-11 h-11 rounded-xl border-2 border-dashed border-gray-700/50 cursor-pointer flex items-center justify-center hover:border-indigo-400 transition-colors">
-            <Plus size={14} className="text-gray-500" />
-            <input type="color" value="#818CF8"
-              onChange={e => addSwatchColor(e.target.value)}
-              className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
-          </label>
+      <div className="relative">
+        <Search size={compact ? 14 : 15} className={cn("absolute top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none", compact ? "left-3.5" : "left-4")} />
+        <input type="text" value={objectSearch}
+          onChange={e => setObjectSearch(e.target.value)}
+          placeholder="Search objects\u2026" autoComplete="off"
+          className={cn("w-full text-sm bg-gray-800 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors",
+            compact ? "pl-10 pr-9 py-2.5 bg-gray-950" : "pl-11 pr-9 py-3")} />
+        {objectSearch && (
+          <button onClick={() => setObjectSearch('')} aria-label="Clear search" className={cn("absolute top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-100", compact ? "right-3.5" : "right-4")}>
+            <X size={compact ? 12 : 13} />
+          </button>
         )}
       </div>
-      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageExtract} className="hidden" />
-      <button onClick={() => fileInputRef.current?.click()} disabled={extracting}
-        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-gray-700/50 text-sm font-medium transition-all duration-200 bg-gray-800 text-gray-400 hover:border-gray-700 hover:bg-gray-700">
-        {extracting ? (
-          <><div className="w-3 h-3 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" /><span>Extracting...</span></>
-        ) : (
-          <><ImagePlus size={14} /><span>Extract from Image</span></>
-        )}
-      </button>
-      <p className="text-[11px] text-gray-500">100% local — never uploaded.</p>
-      {config.swatchColors.length > 0 && (
-        <button onClick={() => setConfig(prev => ({ ...prev, swatchColors: [] }))}
-          className="text-[12px] font-medium text-gray-500 hover:text-indigo-400 transition-colors flex items-center gap-1">
-          <RotateCcw size={10} /> Clear colors
-        </button>
+      <div className={cn("flex overflow-x-auto pb-1", gapCls(compact))}>
+        {OBJECT_CATEGORIES.map(cat => (
+          <button key={cat.id}
+            onClick={() => setObjectCategoryFilter(cat.id)}
+            className={cn(
+              "px-3 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 border",
+              compact ? "py-1 rounded-lg" : "py-1.5",
+              objectCategoryFilter === cat.id
+                ? "bg-indigo-500/10 text-indigo-400 border-indigo-400"
+                : cn("hover:text-gray-100 bg-gray-800 border-gray-700/50", compact ? "text-gray-500 hover:text-gray-400" : "text-gray-400")
+            )}>
+            {cat.label}
+          </button>
+        ))}
+      </div>
+      {filteredObjects.length === 0 ? (
+        <p className={cn("text-sm text-center", compact ? "text-gray-500 py-4" : "text-gray-400 py-8")}>No objects match{compact ? '' : ' your search'}</p>
+      ) : (
+        <div className={cn("grid", compact ? "grid-cols-2 gap-1.5" : "grid-cols-2 sm:grid-cols-3 gap-3")}>
+          {filteredObjects.map(obj => {
+            const ObjIcon = OBJECT_ICONS[obj.id] || Package;
+            const isActive = config.object === obj.id;
+            return compact ? (
+              <button key={obj.id}
+                onClick={() => setConfig(prev => ({ ...prev, object: obj.id as ObjectType, objectDetails: getObjectDefaults(obj.id as ObjectType) }))}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all duration-200 text-sm",
+                  isActive
+                    ? "border-indigo-400 bg-indigo-500/10 text-indigo-400 font-medium"
+                    : "border-gray-700/50 bg-gray-800 text-gray-400 hover:border-gray-700 hover:bg-gray-700 hover:text-gray-100"
+                )}>
+                <ObjIcon size={13} strokeWidth={2} />
+                <span className="truncate text-xs">{obj.label}</span>
+              </button>
+            ) : (
+              <button key={obj.id}
+                onClick={() => setConfig(prev => ({ ...prev, object: obj.id as ObjectType, objectDetails: getObjectDefaults(obj.id as ObjectType) }))}
+                className={cn(
+                  "flex flex-col items-center gap-2.5 p-4 rounded-2xl border-2 text-center transition-all duration-200",
+                  isActive
+                    ? "border-indigo-400 bg-indigo-500/10 text-indigo-400"
+                    : "border-gray-700/50 bg-gray-800 text-gray-400 hover:border-gray-700 hover:bg-gray-700 hover:text-gray-100"
+                )}>
+                <ObjIcon size={22} strokeWidth={1.5} />
+                <span className="text-xs font-semibold leading-tight">{obj.label}</span>
+                {isActive && <Check size={12} className="text-indigo-400" />}
+              </button>
+            );
+          })}
+        </div>
       )}
     </div>
   );
 
-  // ── Mode Switcher ────────────────────────────────────────────────────────
-
-  const ModeSwitcher = ({ compact = false }: { compact?: boolean }) => (
-    <div className={cn(
-      "flex items-center rounded-xl border border-gray-700/50 overflow-hidden bg-gray-800",
-      compact && "text-[12px]"
-    )}>
-      <button
-        onClick={() => { setUiMode('wizard'); setWizardStep(0); }}
-        className={cn(
-          "flex items-center gap-1.5 px-3 py-2 transition-all duration-200 font-semibold",
-          compact ? "text-[11px] px-2.5 py-1.5" : "text-[13px]",
-          uiMode === 'wizard'
-            ? "bg-indigo-500/10 text-indigo-400"
-            : "text-gray-500 hover:text-gray-100"
-        )}>
-        <Wand2 size={compact ? 11 : 13} />
-        {!compact && 'Wizard'}
-      </button>
-      <button
-        onClick={() => setUiMode('studio')}
-        className={cn(
-          "flex items-center gap-1.5 px-3 py-2 transition-all duration-200 font-semibold",
-          compact ? "text-[11px] px-2.5 py-1.5" : "text-[13px]",
-          uiMode === 'studio'
-            ? "bg-indigo-500/10 text-indigo-400"
-            : "text-gray-500 hover:text-gray-100"
-        )}>
-        <LayoutGrid size={compact ? 11 : 13} />
-        {!compact && 'Studio'}
-      </button>
-    </div>
-  );
-
-  // ── Prompt Preview Panel ─────────────────────────────────────────────────
-
-  const PromptPreview = ({ maxH = '70vh' }: { maxH?: string }) => (
-    <div className="rounded-2xl border border-gray-700/50 bg-gray-800 overflow-hidden flex flex-col" style={{ maxHeight: maxH }}>
-      {/* Header */}
-      <div className="px-5 py-3.5 border-b border-gray-700/50 flex items-center gap-2.5 shrink-0">
-        <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-        <span className="text-xs font-semibold text-indigo-400 tracking-wide">Live Prompt</span>
-        <div className="flex-1" />
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500 font-mono">{wordCount}w</span>
-          <div className="flex gap-1">
-            {['8K', 'UE5'].map(tag => (
-              <span key={tag} className="px-1.5 py-0.5 bg-gray-950 text-[9px] font-bold text-gray-500 rounded-md border border-gray-700/50 uppercase tracking-wider">{tag}</span>
+  const renderObjectDetails = (compact = false) => (
+    <div className={compact ? "space-y-4" : "space-y-5"}>
+      {hasObjectDetails && (OBJECT_OPTIONS[config.object] ?? []).map(opt => (
+        <div key={opt.key} className={compact ? "space-y-2" : "rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-3"}>
+          <label className={cn("font-medium text-gray-400", compact ? "text-xs text-gray-500" : "text-sm")}>{opt.label}</label>
+          <div className={cn("grid", gapCls(compact), opt.choices.length <= 3 ? "grid-cols-3" : "grid-cols-2")}>
+            {opt.choices.map(choice => (
+              <TogglePill key={choice.id} label={choice.label}
+                active={(config.objectDetails[opt.key] ?? opt.default) === choice.id}
+                onClick={() => setConfig(prev => ({ ...prev, objectDetails: { ...prev.objectDetails, [opt.key]: choice.id } }))} />
             ))}
           </div>
         </div>
-      </div>
-      {/* Completeness bar */}
-      <div className="px-5 py-2 border-b border-gray-700/50 shrink-0">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] font-medium text-gray-500 uppercase tracking-widest">Richness</span>
-          <span className="text-xs font-semibold text-indigo-400">{completeness.label} · {completeness.score}%</span>
+      ))}
+      {!hasObjectDetails && !compact && (
+        <div className="py-10 text-center text-gray-400 text-sm rounded-2xl border border-gray-700/50 bg-gray-800">
+          No extra options for {label(OBJECTS, config.object)}.
         </div>
-        <div className="h-1 bg-gray-950 rounded-full overflow-hidden">
-          <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-indigo-400"
-            animate={{ width: `${completeness.score}%` }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
-          />
-        </div>
-      </div>
-      {/* Segments */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
-        {promptSegments.map((seg, i) => (
-          <div key={i}>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 block mb-1.5">{seg.label}</span>
-            <p className="text-[13px] leading-relaxed text-gray-400">{seg.text}</p>
-          </div>
+      )}
+    </div>
+  );
+
+  const renderMaterialFinish = (compact = false) => isPrintObject ? (
+    <div className={sectionCls(compact)}>
+      <label className={cn("font-medium text-gray-400", compact ? "text-sm" : "text-sm")}>Material Finish</label>
+      <div className={cn("grid gap-2", compact ? "grid-cols-2 gap-1.5" : "grid-cols-2 sm:grid-cols-3")}>
+        {MATERIALS.map(mat => (
+          <TogglePill key={mat.id} label={mat.label} active={config.material === mat.id}
+            onClick={() => setConfig(prev => ({ ...prev, material: mat.id as MaterialType }))} />
         ))}
       </div>
-      {/* Copy footer */}
-      <div className="p-4 border-t border-gray-700/50 shrink-0">
+    </div>
+  ) : null;
+
+  const renderImageRatio = (compact = false) => (
+    <div className={compact ? "space-y-3" : "space-y-4"}>
+      <p className="text-sm font-medium text-gray-400">Image Ratio</p>
+      <div className={cn("grid grid-cols-4", gapCls(compact))}>
+        {IMAGE_RATIOS.map(r => {
+          const rd = RATIO_DIMENSIONS[r.id] || { w: 4, h: 3 };
+          const isActive = config.imageRatio === r.id;
+          return (
+            <button key={r.id}
+              onClick={() => setConfig(prev => ({ ...prev, imageRatio: r.id as ImageRatio }))}
+              className={cn(
+                "flex flex-col items-center gap-2 py-3 px-1 rounded-xl border-2 transition-all duration-200",
+                isActive
+                  ? "border-indigo-400 bg-indigo-500/10 text-indigo-400"
+                  : cn("border-gray-700/50 text-gray-400 hover:border-gray-700", compact ? "bg-gray-800" : "bg-gray-950")
+              )}>
+              <div className="flex items-center justify-center w-8 h-8">
+                <div className={cn("border-2 rounded-sm", isActive ? "border-indigo-400" : "border-gray-500")} style={{
+                  width: `${Math.min(24, (rd.w / Math.max(rd.w, rd.h)) * 24)}px`,
+                  height: `${Math.min(24, (rd.h / Math.max(rd.w, rd.h)) * 24)}px`,
+                }} />
+              </div>
+              <span className="text-[11px] font-bold">{r.id}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const renderCameraAngle = (compact = false) => (
+    <div className={compact ? "space-y-3" : "space-y-4"}>
+      <p className="text-sm font-medium text-gray-400">Camera Angle</p>
+      <div className={cn("grid grid-cols-2", gapCls(compact))}>
+        {CAMERAS.map(cam => (
+          <TogglePill key={cam.id} label={cam.label} active={config.camera === cam.id}
+            onClick={() => setConfig(prev => ({
+              ...prev, camera: cam.id as CameraAngle,
+              customAngle: cam.id === 'custom' ? (prev.customAngle || { pitch: 30, yaw: 30 }) : prev.customAngle,
+            }))} />
+        ))}
+      </div>
+      {config.camera === 'custom' && (
+        <div className="pt-2">
+          <AngleWidget angle={config.customAngle || { pitch: 30, yaw: 30 }}
+            onChange={a => setConfig(prev => ({ ...prev, customAngle: a }))} />
+        </div>
+      )}
+    </div>
+  );
+
+  const renderLighting = (compact = false) => (
+    <div className={compact ? "space-y-5" : "space-y-4"}>
+      <div className={cardCls(compact)}>
+        <p className="text-sm font-medium text-gray-400">Lighting Style</p>
+        <div className={cn("grid grid-cols-2", gapCls(compact))}>
+          {LIGHTINGS.map(lt => (
+            <TogglePill key={lt.id} label={lt.label} active={config.lighting === lt.id}
+              onClick={() => setConfig(prev => ({ ...prev, lighting: lt.id as LightingType }))} />
+          ))}
+        </div>
+      </div>
+      <div className={sectionCls(compact)}>
+        <div className="flex justify-between items-center">
+          <label className="text-sm font-medium text-gray-400">Intensity</label>
+          <span className="text-sm font-mono font-semibold text-indigo-400">{config.intensity}%</span>
+        </div>
+        <input type="range" min="0" max="100" value={config.intensity}
+          onChange={e => setConfig(prev => ({ ...prev, intensity: parseInt(e.target.value) }))}
+          className="w-full cursor-pointer" />
+      </div>
+    </div>
+  );
+
+  const renderInfiniteBackground = (compact = false) => (
+    <div className={cardCls(compact)}>
+      <div className="flex items-center justify-between">
+        <label className={cn("font-medium text-gray-400", compact ? "text-sm" : "text-sm")}>Infinite Background</label>
+        <button
+          role="switch" aria-checked={config.infiniteBackground} aria-label="Infinite background"
+          onClick={() => setConfig(prev => ({ ...prev, infiniteBackground: !prev.infiniteBackground }))}
+          className={cn(
+            "w-10 h-6 rounded-full transition-colors duration-200 relative flex items-center",
+            config.infiniteBackground ? "bg-indigo-400" : "bg-gray-700"
+          )}>
+          <div className={cn(
+            "absolute w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200",
+            config.infiniteBackground ? "translate-x-5" : "translate-x-0.5"
+          )} />
+        </button>
+      </div>
+      {config.infiniteBackground && (
+        <div className="flex items-center gap-3">
+          <input type="color" value={config.infiniteBgColor}
+            onChange={e => setConfig(prev => ({ ...prev, infiniteBgColor: e.target.value }))}
+            className={cn("rounded-xl border border-gray-700/50 cursor-pointer p-0.5 bg-transparent", compact ? "w-10 h-10" : "w-11 h-11")} />
+          <input type="text" value={config.infiniteBgColor}
+            onChange={e => setConfig(prev => ({ ...prev, infiniteBgColor: e.target.value }))}
+            className="flex-1 p-2.5 text-sm font-mono bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 transition-colors" />
+        </div>
+      )}
+      {compact && config.infiniteBackground && config.swatchColors.length > 0 && (
         <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-xl border border-gray-700/50 overflow-hidden bg-gray-950 text-[11px]">
-            <button onClick={() => setCopyFormat('text')}
-              className={cn("px-3 py-1.5 font-bold transition-all duration-200", copyFormat === 'text' ? "bg-indigo-500/10 text-indigo-400" : "text-gray-500 hover:text-gray-100")}>
-              Text
-            </button>
-            <button onClick={() => setCopyFormat('json')}
-              className={cn("px-3 py-1.5 font-bold transition-all duration-200 flex items-center gap-1", copyFormat === 'json' ? "bg-indigo-500/10 text-indigo-400" : "text-gray-500 hover:text-gray-100")}>
-              <Braces size={10} /> JSON
-            </button>
+          {config.swatchColors.map((color, i) => (
+            <button key={i}
+              onClick={() => setConfig(prev => ({ ...prev, infiniteBgColor: color }))}
+              className={cn("w-8 h-8 rounded-xl border-2 transition-all hover:scale-105", config.infiniteBgColor === color ? "border-indigo-400" : "border-gray-700/50")}
+              style={{ backgroundColor: color }} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderSurfaceSetting = (compact = false) => !config.infiniteBackground ? (
+    <>
+      <div className={sectionCls(compact)}>
+        <p className="text-sm font-medium text-gray-400">Surface</p>
+        <div className={cn("grid grid-cols-2", gapCls(compact))}>
+          {SURFACES.map(srf => (
+            <TogglePill key={srf.id} label={srf.label} active={config.surface === srf.id}
+              onClick={() => setConfig(prev => ({ ...prev, surface: srf.id as SurfaceType }))} />
+          ))}
+        </div>
+      </div>
+      <div className={sectionCls(compact)}>
+        <p className="text-sm font-medium text-gray-400">Setting</p>
+        <div className={cn("grid grid-cols-2", gapCls(compact))}>
+          {SETTINGS.map(s => (
+            <TogglePill key={s.id} label={s.label} active={config.setting === s.id}
+              onClick={() => setConfig(prev => ({ ...prev, setting: s.id as SettingType }))} />
+          ))}
+        </div>
+      </div>
+    </>
+  ) : null;
+
+  const renderAssetInput = (compact = false) => (
+    <div className={compact ? "space-y-5" : "space-y-4"}>
+      <div className={cardCls(compact)}>
+        <p className="text-sm font-medium text-gray-400">Asset Input Type</p>
+        <div className={cn("grid grid-cols-1", gapCls(compact))}>
+          {ASSET_INPUTS.map(ai => (
+            <TogglePill key={ai.id} label={ai.label} active={config.assetInput === ai.id}
+              onClick={() => setConfig(prev => ({ ...prev, assetInput: ai.id as AssetInputType }))} />
+          ))}
+        </div>
+        {config.assetInput === 'design-custom' && (
+          <div className={compact ? "" : "space-y-2 pt-1"}>
+            {!compact && <label className="text-xs font-medium text-gray-500">Dimensions</label>}
+            <input type="text" value={config.assetDimensions}
+              onChange={e => setConfig(prev => ({ ...prev, assetDimensions: e.target.value }))}
+              placeholder={compact ? "e.g. 1920x1080px, A4" : "e.g. 1920x1080px, A4, 210x297mm"}
+              className={cn("w-full text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors", compact ? "p-2.5" : "p-3")} />
           </div>
-          <button onClick={handleCopy}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
-              copied
-                ? "bg-green-400/15 text-green-400 border border-green-400/25"
-                : "bg-indigo-500 text-white hover:bg-indigo-400"
-            )}>
-            {copied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy</>}
-          </button>
+        )}
+      </div>
+
+      <div className={sectionCls(compact)}>
+        <div>
+          <p className="text-sm font-medium text-gray-400">Input Asset Proportions</p>
+          <p className="text-xs text-gray-500 mt-0.5">Match {compact ? 'your attached image so it maps without distortion.' : 'the proportions of your attached image so it maps correctly without distortion.'}</p>
+        </div>
+        <div className={cn("grid grid-cols-3", gapCls(compact))}>
+          {ASSET_RATIOS.map(r => (
+            <TogglePill key={r.id} label={r.label} active={config.assetRatio === r.id}
+              onClick={() => setConfig(prev => ({ ...prev, assetRatio: r.id as AssetRatioType }))} />
+          ))}
+        </div>
+        {config.assetRatio === 'custom' && (
+          <div className={compact ? "" : "space-y-2 pt-1"}>
+            {!compact && <label className="text-xs font-medium text-gray-500">Custom ratio (e.g. 5:2, 7:3)</label>}
+            <input type="text" value={config.customAssetRatio}
+              onChange={e => setConfig(prev => ({ ...prev, customAssetRatio: e.target.value }))}
+              placeholder="e.g. 5:2"
+              className={cn("w-full text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors", compact ? "p-2.5" : "p-3")} />
+          </div>
+        )}
+      </div>
+
+      <div className={sectionCls(compact)}>
+        <p className="text-sm font-medium text-gray-400">Color Swatches</p>
+        <ColorSwatchesUI {...colorSwatchProps} />
+      </div>
+
+      <div className={sectionCls(compact)}>
+        <p className="text-sm font-medium text-gray-400">{compact ? 'Palette Description' : 'Color Palette Description'}</p>
+        <input type="text" value={config.colorPalette ?? ''}
+          onChange={e => setConfig(prev => ({ ...prev, colorPalette: e.target.value }))}
+          placeholder="Warm neutrals, off-whites\u2026"
+          className={cn("w-full text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors", compact ? "p-2.5" : "p-3")} />
+      </div>
+
+      <div className={sectionCls(compact)}>
+        <p className="text-sm font-medium text-gray-400">Asset Description</p>
+        <textarea value={config.assetDescription}
+          onChange={e => setConfig(prev => ({ ...prev, assetDescription: e.target.value }))}
+          placeholder="e.g. A minimalist serif logo for a boutique hotel\u2026"
+          className={cn("w-full text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 resize-none text-gray-100 placeholder:text-gray-500 transition-colors", compact ? "h-20 p-2.5" : "h-24 p-3")} />
+      </div>
+    </div>
+  );
+
+  const renderExtras = (compact = false) => (
+    <div className={compact ? "space-y-5" : "space-y-4"}>
+      <div className={cardCls(compact)}>
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-gray-400">Props</p>
+          {config.props.length > 0 && (
+            <button onClick={() => setConfig(prev => ({ ...prev, props: [] }))}
+              className="text-xs text-gray-500 hover:text-indigo-400 transition-colors flex items-center gap-1">
+              <RotateCcw size={compact ? 9 : 10} /> Clear{compact ? '' : ' all'}
+            </button>
+          )}
+        </div>
+        {!compact && <p className="text-xs text-gray-500 mt-1">Multi-select. Props appear near the hero object.</p>}
+        <div className={cn("grid grid-cols-2", gapCls(compact))}>
+          {PROPS.map(p => (
+            <TogglePill key={p.id} label={p.label} active={config.props.includes(p.id as PropType)}
+              onClick={() => toggleProp(p.id as PropType)} />
+          ))}
+        </div>
+      </div>
+
+      <div className={sectionCls(compact)}>
+        <p className="text-sm font-medium text-gray-400">Hand Interaction</p>
+        <div className={cn("grid grid-cols-2", gapCls(compact))}>
+          {HANDS.map(h => (
+            <TogglePill key={h.id} label={h.label} active={config.hand === h.id}
+              onClick={() => setConfig(prev => ({ ...prev, hand: h.id as HandMode }))} />
+          ))}
+        </div>
+      </div>
+
+      {isScreenObject && (
+        <div className={sectionCls(compact)}>
+          <p className="text-sm font-medium text-gray-400">Screen Effects</p>
+          <div className={cn("grid grid-cols-1", gapCls(compact))}>
+            {SCREEN_EFFECTS.map(fx => (
+              <TogglePill key={fx.id} label={fx.label} active={config.screenEffects.includes(fx.id as ScreenEffectType)}
+                onClick={() => toggleScreenEffect(fx.id as ScreenEffectType)} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className={sectionCls(compact)}>
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-gray-400">Imperfections</p>
+          {config.imperfections.length > 0 && (
+            <button onClick={() => setConfig(prev => ({ ...prev, imperfections: [] }))}
+              className="text-xs text-gray-500 hover:text-indigo-400 transition-colors flex items-center gap-1">
+              <RotateCcw size={compact ? 9 : 10} /> Clear{compact ? '' : ' all'}
+            </button>
+          )}
+        </div>
+        {!compact && <p className="text-xs text-gray-500 mt-1">Ultra-subtle details for photographic realism.</p>}
+        <div className={cn("grid grid-cols-2", gapCls(compact))}>
+          {availableImperfections.map(imp => (
+            <TogglePill key={imp.id} label={imp.label} active={config.imperfections.includes(imp.id as ImperfectionType)}
+              onClick={() => toggleImperfection(imp.id as ImperfectionType)} />
+          ))}
         </div>
       </div>
     </div>
@@ -1102,7 +1598,7 @@ export default function MockupGenerator() {
                         className="px-3 py-1.5 rounded-lg bg-gray-950 text-[12px] font-semibold text-gray-400 hover:bg-indigo-500/10 hover:text-indigo-400 transition-all">
                         Load
                       </button>
-                      <button onClick={() => deletePreset(preset.name)}
+                      <button onClick={() => deletePreset(preset.name)} aria-label="Delete preset"
                         className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-all opacity-0 group-hover:opacity-100">
                         <Trash2 size={13} />
                       </button>
@@ -1115,365 +1611,38 @@ export default function MockupGenerator() {
         </div>
       );
 
-      case 'object': return (
-        <div className="space-y-4">
-          <div className="relative">
-            <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-            <input
-              type="text"
-              value={objectSearch}
-              onChange={e => setObjectSearch(e.target.value)}
-              placeholder="Search objects..."
-              autoComplete="off"
-              className="w-full pl-11 pr-9 py-3 text-sm bg-gray-800 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors"
-            />
-            {objectSearch && (
-              <button onClick={() => setObjectSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-100">
-                <X size={13} />
-              </button>
-            )}
-          </div>
-
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {OBJECT_CATEGORIES.map(cat => (
-              <button key={cat.id}
-                onClick={() => setObjectCategoryFilter(cat.id)}
-                className={cn(
-                  "px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 border",
-                  objectCategoryFilter === cat.id
-                    ? "bg-indigo-500/10 text-indigo-400 border-indigo-400"
-                    : "text-gray-400 hover:text-gray-100 bg-gray-800 border-gray-700/50"
-                )}>
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
-          {filteredObjects.length === 0 ? (
-            <p className="text-sm text-gray-400 py-8 text-center">No objects match your search</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {filteredObjects.map(obj => {
-                const ObjIcon = OBJECT_ICONS[obj.id] || Package;
-                const isActive = config.object === obj.id;
-                return (
-                  <button key={obj.id}
-                    onClick={() => setConfig(prev => ({ ...prev, object: obj.id as ObjectType, objectDetails: getObjectDefaults(obj.id as ObjectType) }))}
-                    className={cn(
-                      "flex flex-col items-center gap-2.5 p-4 rounded-2xl border-2 text-center transition-all duration-200",
-                      isActive
-                        ? "border-indigo-400 bg-indigo-500/10 text-indigo-400"
-                        : "border-gray-700/50 bg-gray-800 text-gray-400 hover:border-gray-700 hover:bg-gray-700 hover:text-gray-100"
-                    )}>
-                    <ObjIcon size={22} strokeWidth={1.5} />
-                    <span className="text-xs font-semibold leading-tight">{obj.label}</span>
-                    {isActive && <Check size={12} className="text-indigo-400" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      );
+      case 'object': return renderObjectSelector();
 
       case 'details': return (
         <div className="space-y-5">
-          {hasObjectDetails ? (
-            <>
-              {(OBJECT_OPTIONS[config.object] ?? []).map(opt => (
-                <div key={opt.key} className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-3">
-                  <label className="text-sm font-medium text-gray-400">{opt.label}</label>
-                  <div className={cn("grid gap-2", opt.choices.length <= 3 ? "grid-cols-3" : "grid-cols-2")}>
-                    {opt.choices.map(choice => (
-                      <TogglePill key={choice.id} label={choice.label}
-                        active={(config.objectDetails[opt.key] ?? opt.default) === choice.id}
-                        onClick={() => setConfig(prev => ({
-                          ...prev, objectDetails: { ...prev.objectDetails, [opt.key]: choice.id },
-                        }))} />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </>
-          ) : (
-            <div className="py-10 text-center text-gray-400 text-sm rounded-2xl border border-gray-700/50 bg-gray-800">
-              No extra options for {label(OBJECTS, config.object)}.
-            </div>
-          )}
-
-          {isPrintObject && (
-            <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-3">
-              <label className="text-sm font-medium text-gray-400">Material Finish</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {MATERIALS.map(mat => (
-                  <TogglePill key={mat.id} label={mat.label} active={config.material === mat.id}
-                    onClick={() => setConfig(prev => ({ ...prev, material: mat.id as MaterialType }))} />
-                ))}
-              </div>
-            </div>
-          )}
+          {renderObjectDetails()}
+          {renderMaterialFinish()}
         </div>
       );
 
       case 'camera': return (
         <div className="space-y-5">
-          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
-            <label className="text-sm font-medium text-gray-400">Image Ratio</label>
-            <div className="grid grid-cols-4 gap-2">
-              {IMAGE_RATIOS.map(r => {
-                const rd = RATIO_DIMENSIONS[r.id] || { w: 4, h: 3 };
-                const isActive = config.imageRatio === r.id;
-                return (
-                  <button key={r.id}
-                    onClick={() => setConfig(prev => ({ ...prev, imageRatio: r.id as ImageRatio }))}
-                    className={cn(
-                      "flex flex-col items-center gap-2 py-3 px-1 rounded-xl border-2 transition-all duration-200",
-                      isActive
-                        ? "border-indigo-400 bg-indigo-500/10 text-indigo-400"
-                        : "border-gray-700/50 bg-gray-950 text-gray-400 hover:border-gray-700"
-                    )}>
-                    <div className="flex items-center justify-center w-8 h-8">
-                      <div className={cn("border-2 rounded-sm", isActive ? "border-indigo-400" : "border-gray-500")} style={{
-                        width: `${Math.min(24, (rd.w / Math.max(rd.w, rd.h)) * 24)}px`,
-                        height: `${Math.min(24, (rd.h / Math.max(rd.w, rd.h)) * 24)}px`,
-                      }} />
-                    </div>
-                    <span className="text-[11px] font-bold">{r.id}</span>
-                  </button>
-                );
-              })}
-            </div>
+          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5">
+            {renderImageRatio()}
           </div>
-
-          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
-            <label className="text-sm font-medium text-gray-400">Camera Angle</label>
-            <div className="grid grid-cols-2 gap-2">
-              {CAMERAS.map(cam => (
-                <TogglePill key={cam.id} label={cam.label} active={config.camera === cam.id}
-                  onClick={() => setConfig(prev => ({
-                    ...prev, camera: cam.id as CameraAngle,
-                    customAngle: cam.id === 'custom' ? (prev.customAngle || { pitch: 30, yaw: 30 }) : prev.customAngle,
-                  }))} />
-              ))}
-            </div>
-            {config.camera === 'custom' && (
-              <div className="pt-2">
-                <AngleWidget angle={config.customAngle || { pitch: 30, yaw: 30 }}
-                  onChange={a => setConfig(prev => ({ ...prev, customAngle: a }))} />
-              </div>
-            )}
+          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5">
+            {renderCameraAngle()}
           </div>
         </div>
       );
 
       case 'environment': return (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-400">Infinite Background</label>
-              <button
-                onClick={() => setConfig(prev => ({ ...prev, infiniteBackground: !prev.infiniteBackground }))}
-                className={cn(
-                  "w-10 h-6 rounded-full transition-colors duration-200 relative flex items-center",
-                  config.infiniteBackground ? "bg-indigo-400" : "bg-gray-700"
-                )}>
-                <div className={cn(
-                  "absolute w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200",
-                  config.infiniteBackground ? "translate-x-5" : "translate-x-0.5"
-                )} />
-              </button>
-            </div>
-            {config.infiniteBackground && (
-              <div className="flex items-center gap-3">
-                <input type="color" value={config.infiniteBgColor}
-                  onChange={e => setConfig(prev => ({ ...prev, infiniteBgColor: e.target.value }))}
-                  className="w-11 h-11 rounded-xl border border-gray-700/50 cursor-pointer p-0.5 bg-transparent" />
-                <input type="text" value={config.infiniteBgColor}
-                  onChange={e => setConfig(prev => ({ ...prev, infiniteBgColor: e.target.value }))}
-                  className="flex-1 p-2.5 text-sm font-mono bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 transition-colors" />
-              </div>
-            )}
-          </div>
-
-          {!config.infiniteBackground && (
-            <>
-              <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
-                <label className="text-sm font-medium text-gray-400">Surface</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {SURFACES.map(srf => (
-                    <TogglePill key={srf.id} label={srf.label} active={config.surface === srf.id}
-                      onClick={() => setConfig(prev => ({ ...prev, surface: srf.id as SurfaceType }))} />
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
-                <label className="text-sm font-medium text-gray-400">Setting</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {SETTINGS.map(s => (
-                    <TogglePill key={s.id} label={s.label} active={config.setting === s.id}
-                      onClick={() => setConfig(prev => ({ ...prev, setting: s.id as SettingType }))} />
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
+          {renderInfiniteBackground()}
+          {renderSurfaceSetting()}
         </div>
       );
 
-      case 'lighting': return (
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
-            <label className="text-sm font-medium text-gray-400">Lighting Style</label>
-            <div className="grid grid-cols-2 gap-2">
-              {LIGHTINGS.map(lt => (
-                <TogglePill key={lt.id} label={lt.label} active={config.lighting === lt.id}
-                  onClick={() => setConfig(prev => ({ ...prev, lighting: lt.id as LightingType }))} />
-              ))}
-            </div>
-          </div>
+      case 'lighting': return renderLighting();
 
-          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
-            <div className="flex justify-between items-center">
-              <label className="text-sm font-medium text-gray-400">Intensity</label>
-              <span className="text-sm font-mono font-semibold text-indigo-400">{config.intensity}%</span>
-            </div>
-            <input type="range" min="0" max="100" value={config.intensity}
-              onChange={e => setConfig(prev => ({ ...prev, intensity: parseInt(e.target.value) }))}
-              className="w-full cursor-pointer" />
-          </div>
-        </div>
-      );
+      case 'style': return renderAssetInput();
 
-      case 'style': return (
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
-            <label className="text-sm font-medium text-gray-400">Asset Input Type</label>
-            <div className="grid grid-cols-1 gap-2">
-              {ASSET_INPUTS.map(ai => (
-                <TogglePill key={ai.id} label={ai.label} active={config.assetInput === ai.id}
-                  onClick={() => setConfig(prev => ({ ...prev, assetInput: ai.id as AssetInputType }))} />
-              ))}
-            </div>
-            {config.assetInput === 'design-custom' && (
-              <div className="space-y-2 pt-1">
-                <label className="text-xs font-medium text-gray-500">Dimensions</label>
-                <input type="text" value={config.assetDimensions}
-                  onChange={e => setConfig(prev => ({ ...prev, assetDimensions: e.target.value }))}
-                  placeholder="e.g. 1920x1080px, A4, 210x297mm"
-                  className="w-full p-3 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-400">Input Asset Proportions</label>
-              <p className="text-xs text-gray-500 mt-1">Match the proportions of your attached image so it maps correctly without distortion.</p>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {ASSET_RATIOS.map(r => (
-                <TogglePill key={r.id} label={r.label} active={config.assetRatio === r.id}
-                  onClick={() => setConfig(prev => ({ ...prev, assetRatio: r.id as AssetRatioType }))} />
-              ))}
-            </div>
-            {config.assetRatio === 'custom' && (
-              <div className="space-y-2 pt-1">
-                <label className="text-xs font-medium text-gray-500">Custom ratio (e.g. 5:2, 7:3)</label>
-                <input type="text" value={config.customAssetRatio}
-                  onChange={e => setConfig(prev => ({ ...prev, customAssetRatio: e.target.value }))}
-                  placeholder="e.g. 5:2"
-                  className="w-full p-3 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
-            <label className="text-sm font-medium text-gray-400">Color Swatches</label>
-            <ColorSwatchesUI />
-          </div>
-
-          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-3">
-            <label className="text-sm font-medium text-gray-400">Color Palette Description</label>
-            <input type="text" value={config.colorPalette ?? ''}
-              onChange={e => setConfig(prev => ({ ...prev, colorPalette: e.target.value }))}
-              placeholder="Warm neutrals, off-whites..."
-              className="w-full p-3 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
-          </div>
-
-          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-3">
-            <label className="text-sm font-medium text-gray-400">Asset Description</label>
-            <textarea value={config.assetDescription}
-              onChange={e => setConfig(prev => ({ ...prev, assetDescription: e.target.value }))}
-              placeholder="e.g. A minimalist serif logo for a boutique hotel, embossed in dark olive green..."
-              className="w-full h-24 p-3 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 resize-none text-gray-100 placeholder:text-gray-500 transition-colors" />
-          </div>
-        </div>
-      );
-
-      case 'extras': return (
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-400">Props</label>
-              <p className="text-xs text-gray-500 mt-1">Multi-select. Props appear near the hero object.</p>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {PROPS.map(p => (
-                <TogglePill key={p.id} label={p.label} active={config.props.includes(p.id as PropType)}
-                  onClick={() => toggleProp(p.id as PropType)} />
-              ))}
-            </div>
-            {config.props.length > 0 && (
-              <button onClick={() => setConfig(prev => ({ ...prev, props: [] }))}
-                className="text-xs font-medium text-gray-500 hover:text-indigo-400 transition-colors flex items-center gap-1">
-                <RotateCcw size={10} /> Clear all
-              </button>
-            )}
-          </div>
-
-          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
-            <label className="text-sm font-medium text-gray-400">Hand Interaction</label>
-            <div className="grid grid-cols-2 gap-2">
-              {HANDS.map(h => (
-                <TogglePill key={h.id} label={h.label} active={config.hand === h.id}
-                  onClick={() => setConfig(prev => ({ ...prev, hand: h.id as HandMode }))} />
-              ))}
-            </div>
-          </div>
-
-          {isScreenObject && (
-            <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
-              <label className="text-sm font-medium text-gray-400">Screen Effects</label>
-              <div className="grid grid-cols-1 gap-2">
-                {SCREEN_EFFECTS.map(fx => (
-                  <TogglePill key={fx.id} label={fx.label} active={config.screenEffects.includes(fx.id as ScreenEffectType)}
-                    onClick={() => toggleScreenEffect(fx.id as ScreenEffectType)} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-400">Imperfections</label>
-              <p className="text-xs text-gray-500 mt-1">Ultra-subtle details for photographic realism.</p>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {availableImperfections.map(imp => (
-                <TogglePill key={imp.id} label={imp.label} active={config.imperfections.includes(imp.id as ImperfectionType)}
-                  onClick={() => toggleImperfection(imp.id as ImperfectionType)} />
-              ))}
-            </div>
-            {config.imperfections.length > 0 && (
-              <button onClick={() => setConfig(prev => ({ ...prev, imperfections: [] }))}
-                className="text-xs font-medium text-gray-500 hover:text-indigo-400 transition-colors flex items-center gap-1">
-                <RotateCcw size={10} /> Clear all
-              </button>
-            )}
-          </div>
-        </div>
-      );
+      case 'extras': return renderExtras();
 
       case 'review': return (
         <div className="space-y-5">
@@ -1493,7 +1662,7 @@ export default function MockupGenerator() {
             )}
           </div>
 
-          <PromptPreview maxH="50vh" />
+          <PromptPreview {...promptPreviewProps} maxH="50vh" />
 
           <div className="rounded-2xl border border-gray-700/50 bg-gray-800 p-5 space-y-3">
             <label className="text-sm font-medium text-gray-400">Save as Preset</label>
@@ -1501,7 +1670,7 @@ export default function MockupGenerator() {
               <input type="text" value={presetName}
                 onChange={e => setPresetName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && savePreset()}
-                placeholder="My preset name..."
+                placeholder="My preset name\u2026"
                 className="flex-1 px-3 py-2.5 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
               <button onClick={savePreset} disabled={!presetName.trim()}
                 className={cn(
@@ -1551,15 +1720,13 @@ export default function MockupGenerator() {
                   onClick={() => goToStep(i)}
                   className={cn(
                     "transition-all duration-300 rounded-full",
-                    i < wizardStep ? "w-5 h-1.5 bg-indigo-400" :
-                    i === wizardStep ? "w-5 h-1.5 bg-indigo-400" :
-                    "w-1.5 h-1.5 bg-gray-700"
+                    i <= wizardStep ? "w-5 h-1.5 bg-indigo-400" : "w-1.5 h-1.5 bg-gray-700"
                   )} />
               ))}
             </div>
 
             <span className="text-xs font-mono text-gray-500 shrink-0">{wizardStep + 1}/{totalSteps}</span>
-            <ModeSwitcher compact />
+            <ModeSwitcher {...modeSwitcherProps} compact />
           </div>
         </header>
 
@@ -1582,7 +1749,7 @@ export default function MockupGenerator() {
                     {React.createElement(stepInfo.icon, { size: 13, className: "text-indigo-400" })}
                     <span className="text-xs font-semibold text-indigo-400">Step {wizardStep + 1} of {totalSteps}</span>
                   </div>
-                  <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-gray-100 mb-3 leading-tight">
+                  <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-gray-100 mb-3 leading-tight text-balance">
                     {stepInfo.title}
                   </h1>
                   <p className="text-base text-gray-400 max-w-lg mx-auto">{stepInfo.subtitle}</p>
@@ -1652,354 +1819,41 @@ export default function MockupGenerator() {
 
       case 'object': return (
         <div className="space-y-5">
-          {/* Object selector */}
           <div className="space-y-3">
             <p className="text-sm font-medium text-gray-400">Object Type</p>
-            <div className="relative">
-              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-              <input type="text" value={objectSearch}
-                onChange={e => setObjectSearch(e.target.value)}
-                placeholder="Search objects..."
-                autoComplete="off"
-                className="w-full pl-10 pr-9 py-2.5 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
-              {objectSearch && (
-                <button onClick={() => setObjectSearch('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-100">
-                  <X size={12} />
-                </button>
-              )}
-            </div>
-            <div className="flex gap-1.5 overflow-x-auto pb-1">
-              {OBJECT_CATEGORIES.map(cat => (
-                <button key={cat.id}
-                  onClick={() => setObjectCategoryFilter(cat.id)}
-                  className={cn(
-                    "px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 border",
-                    objectCategoryFilter === cat.id
-                      ? "bg-indigo-500/10 text-indigo-400 border-indigo-400"
-                      : "text-gray-500 hover:text-gray-400 bg-gray-800 border-gray-700/50"
-                  )}>
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-            {filteredObjects.length === 0 ? (
-              <p className="text-sm text-gray-500 py-4 text-center">No objects match</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-1.5">
-                {filteredObjects.map(obj => {
-                  const ObjIcon = OBJECT_ICONS[obj.id] || Package;
-                  const isActive = config.object === obj.id;
-                  return (
-                    <button key={obj.id}
-                      onClick={() => setConfig(prev => ({ ...prev, object: obj.id as ObjectType, objectDetails: getObjectDefaults(obj.id as ObjectType) }))}
-                      className={cn(
-                        "flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all duration-200 text-sm",
-                        isActive
-                          ? "border-indigo-400 bg-indigo-500/10 text-indigo-400 font-medium"
-                          : "border-gray-700/50 bg-gray-800 text-gray-400 hover:border-gray-700 hover:bg-gray-700 hover:text-gray-100"
-                      )}>
-                      <ObjIcon size={13} strokeWidth={2} />
-                      <span className="truncate text-xs">{obj.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            {renderObjectSelector(true)}
           </div>
-
-          {/* Object Details */}
           {hasObjectDetails && (
             <div className="space-y-4">
               <p className="text-sm font-medium text-gray-400 pt-2 border-t border-gray-700/50">Object Details</p>
-              {(OBJECT_OPTIONS[config.object] ?? []).map(opt => (
-                <div key={opt.key} className="space-y-2">
-                  <label className="text-xs font-medium text-gray-500">{opt.label}</label>
-                  <div className={cn("grid gap-1.5", opt.choices.length <= 3 ? "grid-cols-3" : "grid-cols-2")}>
-                    {opt.choices.map(choice => (
-                      <TogglePill key={choice.id} label={choice.label}
-                        active={(config.objectDetails[opt.key] ?? opt.default) === choice.id}
-                        onClick={() => setConfig(prev => ({ ...prev, objectDetails: { ...prev.objectDetails, [opt.key]: choice.id } }))} />
-                    ))}
-                  </div>
-                </div>
-              ))}
+              {renderObjectDetails(true)}
             </div>
           )}
-
-          {/* Material */}
-          {isPrintObject && (
-            <div className="space-y-3 pt-2 border-t border-gray-700/50">
-              <label className="text-sm font-medium text-gray-400">Material Finish</label>
-              <div className="grid grid-cols-2 gap-1.5">
-                {MATERIALS.map(mat => (
-                  <TogglePill key={mat.id} label={mat.label} active={config.material === mat.id}
-                    onClick={() => setConfig(prev => ({ ...prev, material: mat.id as MaterialType }))} />
-                ))}
-              </div>
-            </div>
-          )}
+          {renderMaterialFinish(true)}
         </div>
       );
 
       case 'camera': return (
         <div className="space-y-5">
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-gray-400">Image Ratio</p>
-            <div className="grid grid-cols-4 gap-1.5">
-              {IMAGE_RATIOS.map(r => {
-                const rd = RATIO_DIMENSIONS[r.id] || { w: 4, h: 3 };
-                const isActive = config.imageRatio === r.id;
-                return (
-                  <button key={r.id}
-                    onClick={() => setConfig(prev => ({ ...prev, imageRatio: r.id as ImageRatio }))}
-                    className={cn(
-                      "flex flex-col items-center gap-2 py-3 px-1 rounded-xl border-2 transition-all duration-200",
-                      isActive
-                        ? "border-indigo-400 bg-indigo-500/10 text-indigo-400"
-                        : "border-gray-700/50 bg-gray-800 text-gray-400 hover:border-gray-700"
-                    )}>
-                    <div className="flex items-center justify-center w-8 h-8">
-                      <div className={cn("border-2 rounded-sm", isActive ? "border-indigo-400" : "border-gray-500")} style={{
-                        width: `${Math.min(24, (rd.w / Math.max(rd.w, rd.h)) * 24)}px`,
-                        height: `${Math.min(24, (rd.h / Math.max(rd.w, rd.h)) * 24)}px`,
-                      }} />
-                    </div>
-                    <span className="text-[11px] font-bold">{r.id}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="space-y-3 pt-2 border-t border-gray-700/50">
-            <p className="text-sm font-medium text-gray-400">Camera Angle</p>
-            <div className="grid grid-cols-2 gap-1.5">
-              {CAMERAS.map(cam => (
-                <TogglePill key={cam.id} label={cam.label} active={config.camera === cam.id}
-                  onClick={() => setConfig(prev => ({
-                    ...prev, camera: cam.id as CameraAngle,
-                    customAngle: cam.id === 'custom' ? (prev.customAngle || { pitch: 30, yaw: 30 }) : prev.customAngle,
-                  }))} />
-              ))}
-            </div>
-            {config.camera === 'custom' && (
-              <div className="pt-2">
-                <AngleWidget angle={config.customAngle || { pitch: 30, yaw: 30 }}
-                  onChange={a => setConfig(prev => ({ ...prev, customAngle: a }))} />
-              </div>
-            )}
+          {renderImageRatio(true)}
+          <div className="pt-2 border-t border-gray-700/50">
+            {renderCameraAngle(true)}
           </div>
         </div>
       );
 
       case 'scene': return (
         <div className="space-y-5">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-400">Infinite Background</p>
-              <button
-                onClick={() => setConfig(prev => ({ ...prev, infiniteBackground: !prev.infiniteBackground }))}
-                className={cn(
-                  "w-10 h-6 rounded-full transition-colors duration-200 relative flex items-center",
-                  config.infiniteBackground ? "bg-indigo-400" : "bg-gray-700"
-                )}>
-                <div className={cn(
-                  "absolute w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200",
-                  config.infiniteBackground ? "translate-x-5" : "translate-x-0.5"
-                )} />
-              </button>
-            </div>
-            {config.infiniteBackground && (
-              <div className="flex items-center gap-3">
-                <input type="color" value={config.infiniteBgColor}
-                  onChange={e => setConfig(prev => ({ ...prev, infiniteBgColor: e.target.value }))}
-                  className="w-10 h-10 rounded-xl border border-gray-700/50 cursor-pointer p-0.5 bg-transparent" />
-                <input type="text" value={config.infiniteBgColor}
-                  onChange={e => setConfig(prev => ({ ...prev, infiniteBgColor: e.target.value }))}
-                  className="flex-1 p-2.5 text-sm font-mono bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 transition-colors" />
-              </div>
-            )}
-            {config.infiniteBackground && config.swatchColors.length > 0 && (
-              <div className="flex items-center gap-2">
-                {config.swatchColors.map((color, i) => (
-                  <button key={i}
-                    onClick={() => setConfig(prev => ({ ...prev, infiniteBgColor: color }))}
-                    className={cn("w-8 h-8 rounded-xl border-2 transition-all hover:scale-105", config.infiniteBgColor === color ? "border-indigo-400" : "border-gray-700/50")}
-                    style={{ backgroundColor: color }} />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {!config.infiniteBackground && (
-            <>
-              <div className="space-y-3 pt-2 border-t border-gray-700/50">
-                <p className="text-sm font-medium text-gray-400">Surface</p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {SURFACES.map(srf => (
-                    <TogglePill key={srf.id} label={srf.label} active={config.surface === srf.id}
-                      onClick={() => setConfig(prev => ({ ...prev, surface: srf.id as SurfaceType }))} />
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-3 pt-2 border-t border-gray-700/50">
-                <p className="text-sm font-medium text-gray-400">Setting</p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {SETTINGS.map(s => (
-                    <TogglePill key={s.id} label={s.label} active={config.setting === s.id}
-                      onClick={() => setConfig(prev => ({ ...prev, setting: s.id as SettingType }))} />
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
+          {renderInfiniteBackground(true)}
+          {renderSurfaceSetting(true)}
         </div>
       );
 
-      case 'lighting': return (
-        <div className="space-y-5">
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-gray-400">Lighting Style</p>
-            <div className="grid grid-cols-2 gap-1.5">
-              {LIGHTINGS.map(lt => (
-                <TogglePill key={lt.id} label={lt.label} active={config.lighting === lt.id}
-                  onClick={() => setConfig(prev => ({ ...prev, lighting: lt.id as LightingType }))} />
-              ))}
-            </div>
-          </div>
-          <div className="space-y-3 pt-2 border-t border-gray-700/50">
-            <div className="flex justify-between items-center">
-              <p className="text-sm font-medium text-gray-400">Intensity</p>
-              <span className="text-sm font-mono font-semibold text-indigo-400">{config.intensity}%</span>
-            </div>
-            <input type="range" min="0" max="100" value={config.intensity}
-              onChange={e => setConfig(prev => ({ ...prev, intensity: parseInt(e.target.value) }))}
-              className="w-full cursor-pointer" />
-          </div>
-        </div>
-      );
+      case 'lighting': return renderLighting(true);
 
-      case 'style': return (
-        <div className="space-y-5">
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-gray-400">Asset Input</p>
-            <div className="grid grid-cols-1 gap-1.5">
-              {ASSET_INPUTS.map(ai => (
-                <TogglePill key={ai.id} label={ai.label} active={config.assetInput === ai.id}
-                  onClick={() => setConfig(prev => ({ ...prev, assetInput: ai.id as AssetInputType }))} />
-              ))}
-            </div>
-            {config.assetInput === 'design-custom' && (
-              <input type="text" value={config.assetDimensions}
-                onChange={e => setConfig(prev => ({ ...prev, assetDimensions: e.target.value }))}
-                placeholder="e.g. 1920x1080px, A4"
-                className="w-full p-2.5 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
-            )}
-          </div>
+      case 'style': return renderAssetInput(true);
 
-          <div className="space-y-3 pt-2 border-t border-gray-700/50">
-            <div>
-              <p className="text-sm font-medium text-gray-400">Input Asset Proportions</p>
-              <p className="text-xs text-gray-500 mt-0.5">Match your attached image so it maps without distortion.</p>
-            </div>
-            <div className="grid grid-cols-3 gap-1.5">
-              {ASSET_RATIOS.map(r => (
-                <TogglePill key={r.id} label={r.label} active={config.assetRatio === r.id}
-                  onClick={() => setConfig(prev => ({ ...prev, assetRatio: r.id as AssetRatioType }))} />
-              ))}
-            </div>
-            {config.assetRatio === 'custom' && (
-              <input type="text" value={config.customAssetRatio}
-                onChange={e => setConfig(prev => ({ ...prev, customAssetRatio: e.target.value }))}
-                placeholder="e.g. 5:2"
-                className="w-full p-2.5 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
-            )}
-          </div>
-
-          <div className="space-y-3 pt-2 border-t border-gray-700/50">
-            <p className="text-sm font-medium text-gray-400">Color Swatches</p>
-            <ColorSwatchesUI />
-          </div>
-
-          <div className="space-y-2 pt-2 border-t border-gray-700/50">
-            <p className="text-sm font-medium text-gray-400">Palette Description</p>
-            <input type="text" value={config.colorPalette ?? ''}
-              onChange={e => setConfig(prev => ({ ...prev, colorPalette: e.target.value }))}
-              placeholder="Warm neutrals, off-whites..."
-              className="w-full p-2.5 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
-          </div>
-
-          <div className="space-y-2 pt-2 border-t border-gray-700/50">
-            <p className="text-sm font-medium text-gray-400">Asset Description</p>
-            <textarea value={config.assetDescription}
-              onChange={e => setConfig(prev => ({ ...prev, assetDescription: e.target.value }))}
-              placeholder="e.g. A minimalist serif logo for a boutique hotel..."
-              className="w-full h-20 p-2.5 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 resize-none text-gray-100 placeholder:text-gray-500 transition-colors" />
-          </div>
-        </div>
-      );
-
-      case 'extras': return (
-        <div className="space-y-5">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-400">Props</p>
-              {config.props.length > 0 && (
-                <button onClick={() => setConfig(prev => ({ ...prev, props: [] }))}
-                  className="text-xs text-gray-500 hover:text-indigo-400 transition-colors flex items-center gap-1">
-                  <RotateCcw size={9} /> Clear
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {PROPS.map(p => (
-                <TogglePill key={p.id} label={p.label} active={config.props.includes(p.id as PropType)}
-                  onClick={() => toggleProp(p.id as PropType)} />
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-3 pt-2 border-t border-gray-700/50">
-            <p className="text-sm font-medium text-gray-400">Hand Interaction</p>
-            <div className="grid grid-cols-2 gap-1.5">
-              {HANDS.map(h => (
-                <TogglePill key={h.id} label={h.label} active={config.hand === h.id}
-                  onClick={() => setConfig(prev => ({ ...prev, hand: h.id as HandMode }))} />
-              ))}
-            </div>
-          </div>
-
-          {isScreenObject && (
-            <div className="space-y-3 pt-2 border-t border-gray-700/50">
-              <p className="text-sm font-medium text-gray-400">Screen Effects</p>
-              <div className="grid grid-cols-1 gap-1.5">
-                {SCREEN_EFFECTS.map(fx => (
-                  <TogglePill key={fx.id} label={fx.label} active={config.screenEffects.includes(fx.id as ScreenEffectType)}
-                    onClick={() => toggleScreenEffect(fx.id as ScreenEffectType)} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-3 pt-2 border-t border-gray-700/50">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-400">Imperfections</p>
-              {config.imperfections.length > 0 && (
-                <button onClick={() => setConfig(prev => ({ ...prev, imperfections: [] }))}
-                  className="text-xs text-gray-500 hover:text-indigo-400 transition-colors flex items-center gap-1">
-                  <RotateCcw size={9} /> Clear
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {availableImperfections.map(imp => (
-                <TogglePill key={imp.id} label={imp.label} active={config.imperfections.includes(imp.id as ImperfectionType)}
-                  onClick={() => toggleImperfection(imp.id as ImperfectionType)} />
-              ))}
-            </div>
-          </div>
-        </div>
-      );
+      case 'extras': return renderExtras(true);
 
       default: return null;
     }
@@ -2020,7 +1874,7 @@ export default function MockupGenerator() {
           </div>
 
           {/* Mode switcher */}
-          <ModeSwitcher />
+          <ModeSwitcher {...modeSwitcherProps} />
 
           <div className="flex-1" />
 
@@ -2091,7 +1945,7 @@ export default function MockupGenerator() {
                 <input type="text" value={presetName}
                   onChange={e => setPresetName(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && savePreset()}
-                  placeholder="Preset name..."
+                  placeholder="Preset name\u2026"
                   className="flex-1 px-3 py-2 text-sm bg-gray-950 border border-gray-700/50 rounded-xl focus:outline-none focus:border-indigo-400 text-gray-100 placeholder:text-gray-500 transition-colors" />
                 <button onClick={savePreset} disabled={!presetName.trim()}
                   className={cn(
@@ -2133,7 +1987,7 @@ export default function MockupGenerator() {
                         <button onClick={() => loadPreset(preset)} className="flex-1 text-left text-sm font-medium text-gray-400 group-hover:text-gray-100 truncate">
                           {preset.name}
                         </button>
-                        <button onClick={() => deletePreset(preset.name)}
+                        <button onClick={() => deletePreset(preset.name)} aria-label="Delete preset"
                           className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-gray-500 hover:text-red-400 transition-all">
                           <Trash2 size={12} />
                         </button>
@@ -2256,7 +2110,7 @@ export default function MockupGenerator() {
           {/* Preview panel (right / desktop only) */}
           <div className="hidden md:flex w-[380px] min-w-[380px] border-l border-gray-700/50 bg-gray-900 flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto p-5">
-              <PromptPreview maxH="none" />
+              <PromptPreview {...promptPreviewProps} maxH="none" />
             </div>
           </div>
         </div>
@@ -2284,18 +2138,18 @@ export default function MockupGenerator() {
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-gray-900 border-t border-gray-700/50 rounded-t-3xl overflow-hidden"
+              className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-gray-900 border-t border-gray-700/50 rounded-t-3xl overflow-hidden overscroll-contain"
               style={{ maxHeight: '80vh' }}>
               <div className="p-4 border-b border-gray-700/50 flex items-center justify-between">
                 <span className="text-sm font-semibold text-gray-100">Live Prompt</span>
-                <button onClick={() => setMobilePreviewOpen(false)}
+                <button onClick={() => setMobilePreviewOpen(false)} aria-label="Close prompt preview"
                   className="p-2 rounded-xl text-gray-400 hover:text-gray-100 hover:bg-gray-800 transition-all">
                   <X size={16} />
                 </button>
               </div>
               <div className="overflow-y-auto" style={{ maxHeight: 'calc(80vh - 60px)' }}>
                 <div className="p-4">
-                  <PromptPreview maxH="none" />
+                  <PromptPreview {...promptPreviewProps} maxH="none" />
                 </div>
               </div>
             </motion.div>

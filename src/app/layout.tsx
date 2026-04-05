@@ -12,7 +12,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className="h-full antialiased" style={{ colorScheme: 'dark' }}>
+      <head>
+        <meta name="theme-color" content="#030712" />
+      </head>
       <body className="min-h-full">
         {children}
       </body>
